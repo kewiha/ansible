@@ -1,0 +1,50 @@
+---
+
+- name: update debian
+  hosts: all
+  remote_user: keith
+  become: true
+  vars:
+    ansible_ssh_private_key_file: "{{ ssh_key_keith_path }}"
+  pre_tasks:
+    - name: install apt updates
+      tags: always
+      apt:
+        update_cache: yes
+        upgrade: safe
+        autoremove: true
+        autoclean: true
+      when: ansible_distribution == "Debian"
+
+- name: create and configure ansible user
+  hosts: all
+  remote_user: keith
+  become: true
+  vars:
+    ansible_ssh_private_key_file: "{{ ssh_key_keith_path }}"
+  tasks:
+    - name: create ansible user
+      tags: always
+      user:
+        name: ansible
+        groups: sudo
+        append: true
+       
+    - name: add ssh pubkey for ansible
+      tags: always
+      authorized_key: 
+        user: ansible
+        key: "{{ ssh_key_ansible_pub_content }}"
+        exclusive: true
+
+    - name: add ansible user to sudoers
+      tags: always
+      lineinfile:
+        path: /etc/sudoers.d/ansible
+        create: true
+        regexp: '^ansible.*'
+        line: "ansible ALL=(ALL) NOPASSWD: ALL"
+        owner: root
+        group: root
+        mode: 0440
+        validate: visudo -cf %s

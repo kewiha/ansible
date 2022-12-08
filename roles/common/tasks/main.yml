@@ -1,0 +1,21 @@
+- name: configure PATH for keith
+  tags: path
+  blockinfile:
+    path: /home/keith/.profile
+    state: present
+    insertafter: EOF
+    block: |
+      if [[ $(id -nG "$USER" | grep "sudo") ]] ; then
+        PATH="$PATH:/usr/local/sbin:/usr/sbin:/sbin"
+      fi
+
+- name: configure PATH for ansible
+  tags: path
+  blockinfile:
+    path: /home/ansible/.profile
+    state: present
+    insertafter: EOF
+    block: |
+      if [[ $(id -nG "$USER" | grep "sudo") ]] ; then
+        PATH="$PATH:/usr/local/sbin:/usr/sbin:/sbin"
+      fi
