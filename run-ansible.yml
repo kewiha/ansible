@@ -1,19 +1,5 @@
 ---
 
-- name: run-ansible.yml
-  hosts: all
-  become: true
-  pre_tasks:
-    - name: install apt updates
-      tags: always
-      apt:
-        update_cache: yes
-        cache_valid_time: 3600
-        upgrade: safe
-        autoremove: true
-        autoclean: true
-      when: ansible_distribution == "Debian"
-
 - name: run common tasks
   hosts: all
   become: true
