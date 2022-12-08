@@ -1,41 +1,21 @@
 ---
 
-- hosts: all
+- name: run-ansible.yml
+  hosts: all
   become: true
   pre_tasks:
     - name: install apt updates
       tags: always
       apt:
         update_cache: yes
+        cache_valid_time: 3600
         upgrade: safe
         autoremove: true
         autoclean: true
       when: ansible_distribution == "Debian"
 
-- hosts: all
+- name: run common tasks
+  hosts: all
   become: true
-  tasks:
-    - name: create ansible user
-      tags: always
-      user:
-        name: ansible
-        groups: sudo
-        append: true
-       
-    - name: add ssh pubkey for ansible
-      tags: always
-      authorized_key: 
-        user: ansible
-        key: "{{ ssh_key_ansible_pub_content }}"
-        exclusve: true
-
-    - name: add ansible user to sudoers
-      tags: always
-      lineinfile:
-        path: /etc/sudoers.d/ansible
-        create: true
-        regexp: '^ansible.*'
-        line: "ansible ALL=(ALL) NOPASSWD: ALL"
-        owner: root
-        group: root
-        mode: 0440
+  roles: 
+    - common

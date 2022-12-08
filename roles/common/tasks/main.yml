@@ -5,17 +5,63 @@
     state: present
     insertafter: EOF
     block: |
-      if [[ $(id -nG "$USER" | grep "sudo") ]] ; then
+      if [  ! -z "$(id -nG "$USER" | grep "sudo")" ] ; then
         PATH="$PATH:/usr/local/sbin:/usr/sbin:/sbin"
       fi
 
-- name: configure PATH for ansible
-  tags: path
-  blockinfile:
-    path: /home/ansible/.profile
-    state: present
-    insertafter: EOF
-    block: |
-      if [[ $(id -nG "$USER" | grep "sudo") ]] ; then
-        PATH="$PATH:/usr/local/sbin:/usr/sbin:/sbin"
-      fi
+- block:
+  - name: "configure /etc/hosts: line 1"
+    tags: hosts
+    lineinfile:
+      path: /etc/hosts
+      regexp: '^127.0.0.1.*'
+      line: "127.0.0.1	localhost"
+  - name: "configure /etc/hosts: line 2"
+    tags: hosts
+    lineinfile:
+      path: /etc/hosts
+      regexp: '^127.0.1.1.*'
+      line: "127.0.1.1	{{ ansible_hostname }}"
+  - name: "configure /etc/hosts: line 3"
+    tags: hosts
+    lineinfile:
+      path: /etc/hosts
+      regexp: '^::1.*'
+      line: "::1		localhost ip6-localhost ip6-loopback"
+  - name: "configure /etc/hosts: line 4"
+    tags: hosts
+    lineinfile:
+      path: /etc/hosts
+      regexp: '^ff02::1.*'
+      line: "ff02::1		ip6-allnodes"
+  - name: "configure /etc/hosts: line 5"
+    tags: hosts
+    lineinfile:
+      path: /etc/hosts
+      regexp: '^ff02::2.*'
+      line: "ff02::2		ip6-allrouters"
+
+- block:
+  - name: remove debian backports repos from apt
+    tags: apt
+    replace:
+      path: /etc/apt/sources.list 
+      regexp: '.*\-backports.*'
+  - name: add contrib and non-free repos to apt (debian)
+    tags: apt
+    apt_repository:
+      repo: deb https://deb.debian.org/debian bullseye main contrib non-free 
+      state: present
+      update_cache: false
+  - name: add contrib and non-free repos to apt (debian-security)
+    tags: apt
+    apt_repository:
+      repo: deb https://deb.debian.org/debian-security bullseye-security main contrib non-free
+      state: present
+      update_cache: false
+  - name: add contrib and non-free repos to apt (updates)
+    tags: apt
+    apt_repository:
+      repo: deb https://deb.debian.org/debian bullseye-updates main contrib non-free
+      state: present
+      update_cache: false
