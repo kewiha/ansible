@@ -1,7 +1,22 @@
 ---
 
-- name: run common tasks
-  hosts: all
+#- name: get processor info
+#  hosts: debian
+#  become: true
+#  tasks:
+#    - name: cat proc info
+#      debug:
+#        msg: 
+#          - "cpu vendor is {{ ansible_processor[1] }}"
+
+- name: run debian common tasks
+  hosts: debian
   become: true
   roles: 
-    - common
+    - debian
+
+- name: run gnome3 tasks
+  hosts: gnome3
+  become: true
+  roles:
+    - gnome3

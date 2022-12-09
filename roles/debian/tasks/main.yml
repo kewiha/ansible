@@ -1,0 +1,185 @@
+### shell ###
+- name: configure PATH for keith
+  tags: shell
+  blockinfile:
+    path: /home/keith/.profile
+    state: present
+    insertafter: EOF
+    block: |
+      if [ ! -z "$(id -nG "$USER" | grep "sudo")" ] ; then
+        PATH="$PATH:/usr/local/sbin:/usr/sbin:/sbin"
+      fi
+
+- name: configure PATH for ansible
+  tags: shell
+  blockinfile:
+    path: /home/ansible/.profile
+    state: present
+    insertafter: EOF
+    block: |
+      if [ ! -z "$(id -nG "$USER" | grep "sudo")" ] ; then
+        PATH="$PATH:/usr/local/sbin:/usr/sbin:/sbin"
+      fi
+
+### network ###
+- tags: network
+  block:
+  - name: "configure /etc/hosts: line 1"
+    lineinfile:
+      path: /etc/hosts
+      regexp: '^127.0.0.1.*'
+      line: "127.0.0.1	localhost"
+  - name: "configure /etc/hosts: line 2"
+    lineinfile:
+      path: /etc/hosts
+      regexp: '^127.0.1.1.*'
+      line: "127.0.1.1	{{ ansible_hostname }}"
+  - name: "configure /etc/hosts: line 3"
+    lineinfile:
+      path: /etc/hosts
+      regexp: '^::1.*'
+      line: "::1		localhost ip6-localhost ip6-loopback"
+  - name: "configure /etc/hosts: line 4"
+    lineinfile:
+      path: /etc/hosts
+      regexp: '^ff02::1.*'
+      line: "ff02::1		ip6-allnodes"
+  - name: "configure /etc/hosts: line 5"
+    lineinfile:
+      path: /etc/hosts
+      regexp: '^ff02::2.*'
+      line: "ff02::2		ip6-allrouters"
+
+
+### apt and packages ###
+- tags: apt
+  block:
+  - name: remove debian backports repos from apt
+    replace:
+      path: /etc/apt/sources.list 
+      regexp: '.*backports.*'
+  - name: remove deb-src repos from apt
+    replace:
+      path: /etc/apt/sources.list
+      regexp: '^deb-src.*'
+  - name: Remove comments from apt sources
+    replace:
+      path: /etc/apt/sources.list
+      regexp: '^#.*'
+  - name: Remove blank lines from apt sources
+    replace: 
+      path: /etc/apt/sources.list
+      regexp: '^\s*\n'
+  - name: add contrib and non-free repos to apt (debian)
+    lineinfile:
+      path: /etc/apt/sources.list
+      regexp: '^deb http[s]*://deb.debian.org/debian.*{{ target_distribution_release }} main.*'
+      line: deb https://deb.debian.org/debian bullseye main contrib non-free
+  - name: add contrib and non-free repos to apt (debian-security)
+    lineinfile:
+      path: /etc/apt/sources.list
+      regexp: '^deb http[s]*://security.debian.org/debian-security.*{{ target_distribution_release }}-security main.*'
+      line: "deb https://security.debian.org/debian-security {{ target_distribution_release }}-security main contrib non-free"
+  - name: add contrib and non-free repos to apt (updates)
+    lineinfile:
+      path: /etc/apt/sources.list
+      regexp: '^deb http[s]*://deb.debian.org/debian.*{{ target_distribution_release }}-updates main.*'
+      line: 'deb https://deb.debian.org/debian {{ target_distribution_release }}-updates main contrib non-free'
+  - name: install apt updates
+    apt:
+      update_cache: yes
+      cache_valid_time: 3600
+      upgrade: safe
+      autoremove: true
+      autoclean: true
+    when: ansible_distribution == "Debian"
+
+- name: install debian common packages
+  tags: apt
+  apt:
+    name: "{{ debian_packages_common }}"
+    state: latest
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: install debian intel CPU specific packages
+  tags: apt
+  apt:
+    name: "{{ debian_packages_cpu_intel }}"
+    state: latest
+    update_cache: yes
+    cache_valid_time: 3600
+  when: ansible_processor[1] == "GenuineIntel"
+    # ansible_processor[1] could be an unreliable way to get this. May have to use shell: to cat /proc/cpuinfo changed_when: false, and register: to get reliable CPU vendor
+- name: install debian AMD CPU specific packages
+  tags: apt
+  apt:
+    name: "{{ debian_packages_cpu_amd }}"
+    state: latest
+    update_cache: yes
+    cache_valid_time: 3600
+  when: ansible_processor[1] == "AuthenticAMD"
+  # ansible_processor[1] could be an unreliable way to get this. May have to use shell: to cat /proc/cpuinfo changed_when: false, and register: to get reliable CPU vendor
+
+
+### Localization and Input ###
+- name: disable annoying bell
+  tags: input
+  lineinfile:
+    path: /etc/inputrc
+    regexp: '.*set bell-style.*'
+    line: "set bell-style none"
+
+- name: set keyboard layout (requires reboot)
+  tags: input,localization
+  block:
+    - name: set XKBMODEL
+      lineinfile:
+        path: /etc/default/keyboard
+        regexp: '^XKBMODEL=.*'
+        line: |
+          XKBMODEL="pc104"
+        create: true
+    - name: set XKBLAYOUT
+      lineinfile:
+        path: /etc/default/keyboard
+        regexp: '^XKBLAYOUT=.*'
+        line: |
+          XKBLAYOUT="us"
+        create: true
+    - name: set XKBVARIANT
+      lineinfile:
+        path: /etc/default/keyboard
+        regexp: '^XKBVARIANT=.*'
+        line: |
+          XKBVARIANT=""
+        create: true
+    - name: set XKBOPTIONS
+      lineinfile:
+        path: /etc/default/keyboard
+        regexp: '^XKBOPTIONS=.*'
+        line: |
+          XKBOPTIONS=""
+        create: true
+    - name: set BACKSPACE mode
+      lineinfile:
+        path: /etc/default/keyboard
+        regexp: '^BACKSPACE=.*'
+        line: |
+          BACKSPACE="guess"
+        create: true
+
+### security ###
+- name: check for root account, disable if found
+  tags: security
+  shell:
+    cmd: |
+      [ "$(cat /etc/shadow | grep '^root:' | grep -c '^root:!:' )" == "1" ]; echo $?
+  register: root_enabled
+  changed_when: false
+- name: disable root account
+  tags: security
+  shell:
+    cmd: |
+      [ "$(passwd -ldq root && cat /etc/shadow | grep '^root:' | grep -c '^root:!:' )" == "1" ]; echo $?
+  when: root_enabled.stdout == "1"

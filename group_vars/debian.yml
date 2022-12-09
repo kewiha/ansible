@@ -1,0 +1,27 @@
+debian_packages_common: 
+  - ca-certificates
+  - dosfstools
+  - fio
+  - gdisk
+  - htop
+  - iotop
+  - iperf3
+  - linux-headers-{{ ansible_kernel }}
+  - linux-image-{{ ansible_kernel }}
+  - lshw
+  - lsof
+  - lsscsi
+  - lz4
+  - pciutils
+  - rsync
+  - rsync
+  - smartmontools
+  - traceroute
+  - wget
+  - whois
+
+debian_packages_cpu_intel:
+  - intel-microcode
+
+debian_packages_cpu_amd:
+  - amd64-microcode

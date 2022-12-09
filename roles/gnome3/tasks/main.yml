@@ -1,0 +1,37 @@
+
+### Power Management ###
+- name: Check automatic suspend on AC status
+  tags: power
+  shell:
+    cmd: | 
+      gsettings get org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout
+  register: power_suspend_AC_enabled
+  changed_when: false
+
+- tags: power
+  debug: 
+    msg: "{{ power_suspend_AC_enabled }}"
+
+- name: Disable automatic suspend on AC
+  tags: power
+  shell:
+    cmd: |
+      dbus-launch --exit-with-session gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout 0
+  when: power_suspend_AC_enabled.stdout != "0"
+  register: change_output
+
+- name: Check automatic suspend on AC status
+  tags: power
+  shell:
+    cmd: |
+      gsettings get org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout
+  register: power_suspend_AC_enabled
+  changed_when: false
+
+- tags: power
+  debug:
+    msg: "{{ power_suspend_AC_enabled }}"
+
+- tags: power
+  debug:
+    msg: "{{ change_output }}"
