@@ -16,6 +16,7 @@ debian_packages_common:
   - rsync
   - rsync
   - smartmontools
+  - systemd-timesyncd
   - traceroute
   - wget
   - whois

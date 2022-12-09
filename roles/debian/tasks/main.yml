@@ -131,7 +131,7 @@
     line: "set bell-style none"
 
 - name: set keyboard layout (requires reboot)
-  tags: input,localization
+  tags: input,locale
   block:
     - name: set XKBMODEL
       lineinfile:
@@ -168,6 +168,76 @@
         line: |
           BACKSPACE="guess"
         create: true
+
+- name: generate locale
+  tags: locale
+  block:
+    - name: Remove comments from locale.gen
+      replace:
+        path: /etc/locale.gen
+        regexp: '^#.*'
+    - name: Remove blank lines from locale.gen
+      replace:
+        path: /etc/locale.gen
+        regexp: '^\s*\n'
+    - name: add en_CA UTF8 to locale.gen
+      lineinfile:
+        path: /etc/locale.gen
+        regexp: '.*en_CA.UTF-8 UTF-8'
+        line: |
+          en_CA.UTF-8 UTF-8
+        create: true
+      notify: locale_gen
+    - name: add en_US UTF8 to locale.gen
+      lineinfile:
+        path: /etc/locale.gen
+        regexp: '.*en_US.UTF-8 UTF-8'
+        line: |
+          en_US.UTF-8 UTF-8
+        create: true
+      notify: locale_gen
+    - name: add LANG to default locale
+      lineinfile: 
+         path: /etc/default/locale
+         regexp: '^LANG=.*'
+         line: |
+           LANG="en_CA.UTF-8"
+         create: true
+      notify: locale_gen
+    - name: add LANGUAGE to default locale
+      lineinfile:
+         path: /etc/default/locale
+         regexp: '^LANGUAGE=.*'
+         line: |
+           LANGUAGE="en_CA:en"
+         create: true
+      notify: locale_gen
+
+- name: check timezone, RTC, and NTP are ok
+  tags: locale,time
+  shell: 
+    cmd: |
+      timedatectl
+  register: timedatectl_out
+  changed_when: false 
+- name: set timezone, RTC, NTP
+  tags: locale,time
+  block: 
+    - name: set NTP server
+      shell:
+        cmd: |
+          timedatectl set-ntp 1
+      when: "'NTP service: n/a' in timedatectl_out.stdout"
+    - name: set timezone
+      shell:
+        cmd: | 
+          timedatectl set-timezone America/Toronto
+      when: "'America/Toronto' not in timedatectl_out.stdout"
+    - name: set RTC mode to UTC
+      shell: 
+        cmd: | 
+          timedatectl set-local-rtc 0 --adjust-system-clock
+      when: "'RTC in local TZ: yes' in timedatectl_out.stdout"      
 
 ### security ###
 - name: check for root account, disable if found
