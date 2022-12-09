@@ -1,5 +1,5 @@
 ssh_key_keith_path: "~/.ssh/id_ed25519_keith_HAFXB-W10_WSL2_debian"
 ssh_key_keith_pub_content: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFFWfuoIayA2ckiCUfb8h9Q+KiDU1n8Gd5aTVP1kwMKC keith@HAFXB-W10 on WSL2 Debian"
 
-ssh_key_ansible_path: "~/.ssh/id_ed25519_ansible"
+ssh_key_ansible_path: "/home/keith/.ssh/id_ed25519_ansible"
 ssh_key_ansible_pub_content: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKdHQpgEJ++Sl/NdAiDHjTBFjeSGyndOWGC7hB68HVjW ansible"
