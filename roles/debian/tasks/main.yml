@@ -121,6 +121,29 @@
   when: ansible_processor[1] == "AuthenticAMD"
   # ansible_processor[1] could be an unreliable way to get this. May have to use shell: to cat /proc/cpuinfo changed_when: false, and register: to get reliable CPU vendor
 
+- name: configure unattended-upgrades
+  tags: apt
+  block:
+    - name: enable unattended-upgrades
+      lineinfile:
+        path: /etc/apt/apt.conf.d/20auto-upgrades
+        regexp: |
+          '^APT.*Periodic.*Unattended-Upgrade'
+        line: "APT::Periodic::Unattended-Upgrade \"1\";"
+    - name: configure unattended-upgrades 
+      blockinfile: 
+        path: /etc/apt/apt.conf.d/50unattended-upgrades
+        block: |
+          Unattended-Upgrade::Remove-Unused-Kernel-Packages "true";
+          Unattended-Upgrade::MinimalSteps "true";
+          Unattended-Upgrade::OnlyOnACPower "true";
+          Unattended-Upgrade::SyslogFacility "daemon";
+          Unattended-Upgrade::Skip-Updates-On-Metered-Connections "true";
+          Unattended-Upgrade::Verbose "false";
+          Unattended-Upgrade::Mail "root";
+          Unattended-Upgrade::MailReport "on-error";
+          Unattended-Upgrade::SyslogEnable "true";
+          Unattended-Upgrade::SyslogFacility "daemon";
 
 ### Localization and Input ###
 - name: disable annoying bell
@@ -253,3 +276,75 @@
     cmd: |
       [ "$(passwd -ldq root && cat /etc/shadow | grep '^root:' | grep -c '^root:!:' )" == "1" ]; echo $?
   when: root_enabled.stdout == "1"
+
+- name: configure fail2ban
+  tags: security
+  block:
+    - name: configure jail.local
+      block:
+        - name: copy jail.conf to .local
+          copy:
+            src: /etc/fail2ban/jail.conf
+            dest: /etc/fail2ban/jail.local
+            remote_src: true
+            force: false
+          notify: restart_fail2ban
+        - name: change jail.conf default ban time
+          lineinfile:
+            path: /etc/fail2ban/jail.local
+            regexp: '^bantime\ *=.*'
+            line: |
+              bantime  = 10m
+          notify: restart_fail2ban
+        - name: change jail.conf default findtime
+          lineinfile:
+            path: /etc/fail2ban/jail.local
+            regexp: '^findtime\ *=.*'
+            line: |
+              findtime  = 10m
+          notify: restart_fail2ban
+        - name: change jail.conf backend
+          lineinfile: 
+            path: /etc/fail2ban/jail.local
+            regexp: '^backend\ *=.*'
+            line: |
+              backend = systemd
+          notify: restart_fail2ban  
+    - name: configure fail2ban.local
+      block:
+        - name: copy fail2ban.conf to .local
+          copy:
+            src: /etc/fail2ban/fail2ban.conf
+            dest: /etc/fail2ban/fail2ban.local
+            remote_src: true
+            force: false
+          notify: restart_fail2ban
+        - name: set fail2ban.local loglevel
+          lineinfile:
+            path: /etc/fail2ban/fail2ban.local
+            regexp: '^loglevel\ =.*'
+            line: |
+              loglevel = INFO
+          notify: restart_fail2ban
+        - name: set fail2ban.local logtarget
+          lineinfile:
+            path: /etc/fail2ban/fail2ban.local
+            regexp: '^logtarget\ =.*'
+            line: |
+              logtarget = /var/log/fail2ban.log
+          notify: restart_fail2ban
+#    - name: check age of fail2ban files to trigger restart
+#      block:
+#        - name: check age of fail2ban.local and jail.conf
+#          find: 
+#            paths: /etc/fail2ban
+#            pattern: |
+#              '.*conf$'
+#            age: -1m
+#          notify: restart_fail2ban
+
+#    - name: restart fail2ban if not already planned
+#      when: should_restart_fail2ban.changed
+#      command: /bin/true
+#      notify: restart_fail2ban
+#      changed_when: true

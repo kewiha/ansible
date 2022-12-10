@@ -1,6 +1,7 @@
 debian_packages_common: 
   - ca-certificates
   - dosfstools
+  - fail2ban
   - fio
   - gdisk
   - htop
@@ -13,11 +14,13 @@ debian_packages_common:
   - lsscsi
   - lz4
   - pciutils
+  - popularity-contest
   - rsync
   - rsync
   - smartmontools
   - systemd-timesyncd
   - traceroute
+  - unattended-upgrades
   - wget
   - whois
 

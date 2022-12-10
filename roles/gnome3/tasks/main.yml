@@ -1,19 +1,5 @@
 
-### Power Management ###
-#- name: Check automatic suspend on AC timeout action
-#  tags: power
-#  shell:
-#    cmd: | 
-#      dbus-launch --exit-with-session gsettings get org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type
-#  register: sleep_inactive_ac_type
-#  changed_when: false
-
-#- name: Set automatic suspend on AC timeout value
-#  tags: power
-#  shell:
-#    cmd: |
-#      dbus-launch --exit-with-session gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing'
-#  when: sleep_inactive_ac_type.stdout != "'nothing'"
+### gnome3 settings ###
 - name: configure dconf keys
   tags: gnome3
   block:
@@ -68,3 +54,47 @@
         group: root
         mode: 0644
       notify: dconf_update 
+
+
+### apt and packages ###
+- name: remove unwanted gnome apt packages
+  tags: gnome3,apt
+  apt:
+    name: "{{ gnome3_packages_unwanted }}"
+    state: absent
+    autoclean: true
+    autoremove: true
+    purge: true
+- name: install gnome3 common packages
+  tags: gnome3,apt
+  apt:
+    name: "{{ gnome3_packages_common }}"
+    state: latest
+    update_cache: yes
+    cache_valid_time: 3600
+- name: unattended-upgrades on shutdown
+  tags: gnome3,apt
+  lineinfile:
+    path: /etc/apt/apt.conf.d/50unattended-upgrades
+    regexp: |
+      '^Unattended-Upgrade.*InstallOnShutdown.*'
+    line: "Unattended-Upgrade::InstallOnShutdown \"true\";"
+   #may want to increase logind's InhibitDelayMaxSec to a few minutes to accomodate this
+
+### locales ###
+- name: localepurge
+  tags: gnome3,locale
+  block:
+  - name: install localepurge config file
+    template:
+      src: locale.nopurge
+      dest: /etc/locale.nopurge
+      owner: root
+      group: root
+      mode: 0644
+    register: locale_nopurge_config_changed  
+  - name: run localepurge
+    shell:
+      cmd: /usr/sbin/localepurge
+    when: locale_nopurge_config_changed.changed
+    notify: locale_gen

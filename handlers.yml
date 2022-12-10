@@ -1,0 +1,12 @@
+- name: locale_gen
+  tags: locale
+  shell:
+    cmd: /usr/sbin/locale-gen
+
+- name: restart_fail2ban
+  tags: security
+  service: 
+    name: fail2ban
+    state: restarted
+    enabled: true
+    

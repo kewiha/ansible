@@ -1,4 +1,0 @@
-- name: locale_gen
-  tags: locale
-  shell:
-    cmd: /usr/sbin/locale-gen
