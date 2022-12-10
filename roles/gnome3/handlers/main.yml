@@ -1,0 +1,4 @@
+- name: dconf_update
+  tags: gnome3
+  shell:
+    cmd: dconf update

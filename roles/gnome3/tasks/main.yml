@@ -1,17 +1,70 @@
 
 ### Power Management ###
-- name: Check automatic suspend on AC timeout action
-  tags: power
-  shell:
-    cmd: | 
-      dbus-launch --exit-with-session gsettings get org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type
-  register: sleep_inactive_ac_type
-  changed_when: false
+#- name: Check automatic suspend on AC timeout action
+#  tags: power
+#  shell:
+#    cmd: | 
+#      dbus-launch --exit-with-session gsettings get org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type
+#  register: sleep_inactive_ac_type
+#  changed_when: false
 
-- name: Set automatic suspend on AC timeout value
-  tags: power
-  shell:
-    cmd: |
-      dbus-launch --exit-with-session gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing'
-  when: sleep_inactive_ac_type.stdout != "'nothing'"
+#- name: Set automatic suspend on AC timeout value
+#  tags: power
+#  shell:
+#    cmd: |
+#      dbus-launch --exit-with-session gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing'
+#  when: sleep_inactive_ac_type.stdout != "'nothing'"
+- name: configure dconf keys
+  tags: gnome3
+  block:
+    - name: make user-db line in dconf profile
+      lineinfile:
+        path: /etc/dconf/profile/user
+        regexp: '^user-db:.*'
+        line: |
+          user-db:user
+        create: true
+    - name: make system-db line in dconf profile
+      lineinfile:
+        path: /etc/dconf/profile/user
+        regexp: '^system-db:.*'
+        line: |
+          system-db:local
+        create: true
+- name: make folder for system keyfile for dconf
+  tags: gnome3
+  file:
+    path: /etc/dconf/db/local.d
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
 
+- name: template system keyfile for dconf
+  tags: gnome3
+  template:
+    src: local.j2
+    dest: /etc/dconf/db/local.d/00-ansible
+    owner: root
+    group: root
+    mode: 0644
+  notify: dconf_update
+
+- name: lock customized keys for dconf
+  tags: gnome3
+  block:
+    - name: make locks folder for dconf
+      file:
+        path: /etc/dconf/db/local.d/locks
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+    - name: move locks template for dconf
+      template:
+        src: locked.j2
+        dest: /etc/dconf/db/local.d/locks/00-ansible
+        owner: root
+        group: root
+        mode: 0644
+      notify: dconf_update 
