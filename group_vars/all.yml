@@ -3,3 +3,7 @@ ssh_key_keith_pub_content: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFFWfuoIayA2ckiC
 
 ssh_key_ansible_path: "SECRET/id_ed25519_ansible"
 ssh_key_ansible_pub_content: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKdHQpgEJ++Sl/NdAiDHjTBFjeSGyndOWGC7hB68HVjW ansible"
+
+admin_users: 
+  - keith
+  - ansible

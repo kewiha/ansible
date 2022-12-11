@@ -6,9 +6,8 @@
   become: true
   vars:
     ansible_ssh_private_key_file: "{{ ssh_key_keith_path }}"
-  pre_tasks:
+  tasks:
     - name: install apt updates
-      tags: always
       apt:
         update_cache: yes
         cache_valid_time: yes
@@ -16,27 +15,30 @@
         autoremove: true
         autoclean: true
       when: ansible_distribution == "Debian"
+    
+    - name: create ssh-user group
+      group:
+        name: ssh-user
+        state: present
 
-- name: create and configure ansible user
-  hosts: debian
-  remote_user: keith
-  become: true
-  vars:
-    ansible_ssh_private_key_file: "{{ ssh_key_keith_path }}"
-  tasks:
+    - name: add keith to ssh-user group and set shell
+      user:
+        name: keith
+        groups: ssh-user
+        append: true
+        shell: /bin/bash
+
     - name: create ansible user
       user:
         name: ansible
-        groups: sudo
+        groups: sudo,ssh-user
         append: true
         shell: /bin/bash
-       
     - name: add ssh pubkey for ansible
       authorized_key: 
         user: ansible
         key: "{{ ssh_key_ansible_pub_content }}"
         exclusive: true
-
     - name: add ansible user to sudoers
       lineinfile:
         path: /etc/sudoers.d/ansible
@@ -47,7 +49,6 @@
         group: root
         mode: 0440
         validate: visudo -cf %s
-
     - name: configure PATH for ansible
       blockinfile:
         path: /home/ansible/.profile

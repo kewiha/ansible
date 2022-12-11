@@ -1,0 +1,28 @@
+AllowGroups ssh-user
+AuthenticationMethods publickey
+Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes256-ctr
+	#https://stribika.github.io/2015/01/04/secure-secure-shell.html
+	#removed anything less than 256-bit
+ChallengeResponseAuthentication no
+HostKey /etc/ssh/ssh_host_ed25519_key
+	#https://stribika.github.io/2015/01/04/secure-secure-shell.html
+HostKey /etc/ssh/ssh_host_rsa_key
+	#https://stribika.github.io/2015/01/04/secure-secure-shell.html
+KexAlgorithms curve25519-sha256@libssh.org
+	#https://stribika.github.io/2015/01/04/secure-secure-shell.html
+	#https://weakdh.org/sysadmin.html
+	#diffie-hellman-group-exchange-sha256 can also be enabled IFF needed, but requires modifying /etc/ssh/moduli which is tedious
+MACs hmac-sha2-512-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,umac-128@openssh.com
+	#https://stribika.github.io/2015/01/04/secure-secure-shell.html
+	#removed smaller bit sizes of the same algs
+PasswordAuthentication no
+PermitRootLogin no
+PrintMotd no
+Protocol 2
+	#not really needed unless using ancient openssh
+PubkeyAuthentication yes
+Subsystem sftp /usr/lib/openssh/sftp-server
+	#needed for ssh-add in setup-ansible.yml
+UseDNS yes
+UsePAM yes
+	#needed for ansible user to be able to log in at all

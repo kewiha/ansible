@@ -1,0 +1,33 @@
+---
+
+- name: test getent
+  hosts: debian
+  become: true
+  tasks:
+    - name: configure sshd
+      tags: security
+      block:
+        - name: add admin users to ssh-user group
+          block:
+            - name: create ssh-user group
+              group:
+                name: ssh-user
+                state: present
+            - name: add admins to ssh-user group
+              user:
+                name: "{{ item }}"
+                groups: ssh-user
+                append: true
+              loop: "{{ admin_users }}"
+
+    - name: configure PATH for admins
+      tags: shell
+      blockinfile:
+        path: "/home/{{ item }}/.profile"
+        state: present
+        insertafter: EOF
+        block: |
+          if [ ! -z "$(id -nG "$USER" | grep "sudo")" ] ; then
+            PATH="$PATH:/usr/local/sbin:/usr/sbin:/sbin"
+          fi
+      loop: "{{ admin_users }}"

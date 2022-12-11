@@ -1,25 +1,15 @@
 ### shell ###
-- name: configure PATH for keith
+- name: configure PATH for admins
   tags: shell
   blockinfile:
-    path: /home/keith/.profile
+    path: "/home/{{ item }}/.profile"
     state: present
     insertafter: EOF
     block: |
       if [ ! -z "$(id -nG "$USER" | grep "sudo")" ] ; then
         PATH="$PATH:/usr/local/sbin:/usr/sbin:/sbin"
       fi
-
-- name: configure PATH for ansible
-  tags: shell
-  blockinfile:
-    path: /home/ansible/.profile
-    state: present
-    insertafter: EOF
-    block: |
-      if [ ! -z "$(id -nG "$USER" | grep "sudo")" ] ; then
-        PATH="$PATH:/usr/local/sbin:/usr/sbin:/sbin"
-      fi
+  loop: "{{ admin_users }}"
 
 ### network ###
 - tags: network
@@ -333,18 +323,33 @@
             line: |
               logtarget = /var/log/fail2ban.log
           notify: restart_fail2ban
-#    - name: check age of fail2ban files to trigger restart
-#      block:
-#        - name: check age of fail2ban.local and jail.conf
-#          find: 
-#            paths: /etc/fail2ban
-#            pattern: |
-#              '.*conf$'
-#            age: -1m
-#          notify: restart_fail2ban
 
-#    - name: restart fail2ban if not already planned
-#      when: should_restart_fail2ban.changed
-#      command: /bin/true
-#      notify: restart_fail2ban
-#      changed_when: true
+- name: configure sshd
+  tags: security
+  block:
+    - name: add admin users to ssh-user group
+      block:
+        - name: create ssh-user group
+          group:
+            name: ssh-user
+            state: present
+        - name: add admins to ssh-user group
+          user:
+            name: "{{ item }}"
+            groups: ssh-user
+            append: true
+          loop: "{{ admin_users }}"
+        - name: lock down sshd_config
+          template:
+            src: sshd_config.j2
+            dest: /etc/ssh/sshd_config
+            owner: root
+            group: root
+            mode: 0644
+          register: sshd_config_changed
+        - name: run localepurge
+          service:
+            name: sshd
+            enabled: true
+            state: reloaded
+          when: sshd_config_changed.changed

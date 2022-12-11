@@ -87,7 +87,7 @@
   block:
   - name: install localepurge config file
     template:
-      src: locale.nopurge
+      src: locale.nopurge.j2
       dest: /etc/locale.nopurge
       owner: root
       group: root
