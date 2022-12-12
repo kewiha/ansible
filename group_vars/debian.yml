@@ -14,7 +14,6 @@ debian_packages_common:
   - lsscsi
   - lz4
   - pciutils
-  - popularity-contest
   - rsync
   - rsync
   - smartmontools
