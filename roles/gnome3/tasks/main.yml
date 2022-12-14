@@ -29,7 +29,7 @@
 - name: template system keyfile for dconf
   tags: gnome3
   template:
-    src: local.j2
+    src: dconf_user_local.j2
     dest: /etc/dconf/db/local.d/00-ansible
     owner: root
     group: root
@@ -48,12 +48,27 @@
         mode: 0755
     - name: move locks template for dconf
       template:
-        src: locked.j2
+        src: dconf_user_locked.j2
         dest: /etc/dconf/db/local.d/locks/00-ansible
         owner: root
         group: root
         mode: 0644
       notify: dconf_update 
+
+- name: configure gdm3-greeter
+  tags: gnome3
+  block:
+    - template:
+        src: dconf_user_local.j2
+        dest: /etc/gdm3/greeter.dconf-defaults
+        owner: root
+        group: root
+        mode: 0644
+      register: gdm3_greeter_changed
+    - shell:
+        cmd: dpkg-reconfigure gdm3
+      when: gdm3_greeter_changed.changed
+  #dconf_update may not apply these, dpkg-reconfigure gdm3 may be needed
 
 
 ### apt and packages ###

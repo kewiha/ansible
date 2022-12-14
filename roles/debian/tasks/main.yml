@@ -347,7 +347,30 @@
             group: root
             mode: 0644
           register: sshd_config_changed
-        - name: run localepurge
+        - name: check if default ssh host keys exist
+          stat:
+            path: /etc/ssh/ssh_host_ecdsa_key
+            get_checksum: false
+            get_attributes: false
+            get_mime: false
+          register: ssh_default_host_keys
+        - name: replace ssh host keys if needed
+          when: ssh_default_host_keys.stat.exists
+          block:
+            - name: delete default ssh host keys
+              file:
+                path: "{{ item }}"
+                state: absent
+              loop: "{{ sshd_host_key_paths }}"              
+            - name: generate ssh ed25519 host key
+              shell:
+                cmd: |
+                  ssh-keygen -t ed25519 -f /etc/ssh/ssh_host_ed25519_key -N ""                
+            - name: generate ssh rsa host key
+              shell:
+                cmd: |
+                  ssh-keygen -t rsa -b 4096 -f /etc/ssh/ssh_host_rsa_key -N ""      
+        - name: reload sshd if needed
           service:
             name: sshd
             enabled: true

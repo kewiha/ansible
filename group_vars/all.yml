@@ -7,3 +7,12 @@ ssh_key_ansible_pub_content: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKdHQpgEJ++Sl/
 admin_users: 
   - keith
   - ansible
+
+sshd_host_key_paths:
+  - /etc/ssh/ssh_host_ecdsa_key
+  - /etc/ssh/ssh_host_ecdsa_key.pub
+  - /etc/ssh/ssh_host_ed25519_key
+  - /etc/ssh/ssh_host_ed25519_key.pub
+  - /etc/ssh/ssh_host_rsa_key
+  - /etc/ssh/ssh_host_rsa_key.pub
+
