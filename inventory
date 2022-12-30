@@ -6,11 +6,15 @@ all:
     gnome3:
       hosts:
         a68apu:
+    firefox:
+      hosts:
+        a68apu:
     servers:
       hosts:
     clients:
       hosts:
         a68apu:
+    
 
 #[debian]
 #a68apu

@@ -10,3 +10,11 @@
     state: restarted
     enabled: true
     
+- name: run_arkenfox_unit
+  become: true
+  become_user: ansible
+  tags: firefox
+  service:
+    name: arkenfox@keith.service
+    state: restarted
+    
