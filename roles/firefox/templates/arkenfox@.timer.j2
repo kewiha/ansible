@@ -1,0 +1,10 @@
+[Unit]
+Description=Update arkenfox user.js for Firefox, and clean prefs for %i regularly
+After=multi-user.target network-online.target
+
+[Timer]
+OnBootSec=1s
+OnUnitActiveSec=1w
+
+[Install]
+WantedBy=timers.target

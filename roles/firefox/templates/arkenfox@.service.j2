@@ -1,0 +1,18 @@
+#Assumes:
+	#/home/%I is the user's home dir
+	#firefox profile to be updated is in ~/.mozilla/firefox/ansible
+
+[Unit]
+Description=Update arkenfox user.js for Firefox, and clean prefs for %i
+After=multi-user.target network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=no
+ExecStart=/home/%i/.mozilla/firefox/ansible/updater.sh -u -s -e
+	#-u updates updater.sh without asking
+	#-s updates user.js without asking
+	#-e is for firefox-esr (instead of vanilla firefox), which is provided by debian stable
+ExecStart=/home/%i/.mozilla/firefox/ansible/prefsCleaner.sh
+	#-s starts immediately without user interaction
+ExecStart=/usr/bin/chown %i /home/%i/.mozilla/firefox/ansible/*

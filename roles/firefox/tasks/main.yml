@@ -44,43 +44,50 @@
             Default=1
           state: present
 
-  - name: install arkenfox (linux)
+  - name: install arkenfox user.js and updater (linux)
     hosts: debian
     block:
-      -name: get arkenfox user.js (linux)
-       get_url:
-         dest: /home/keith/.mozilla/firefox/ansible
-         force: true
-         mode: 0600
-         owner: keith
-         group: keith
-         url: |
-           https://raw.githubusercontent.com/arkenfox/user.js/master/user.js
-      -name: get arkenfox prefsCleaner (linux)
-       get_url:
-         dest: /home/keith/.mozilla/firefox/ansible
-         force: true
-         mode: 0700
-         owner: keith
-         group: keith
-         url: |
-           https://raw.githubusercontent.com/arkenfox/user.js/master/prefsCleaner.sh
-      -name: get arkenfox updater (linux)
-       get_url:
-         dest: /home/keith/.mozilla/firefox/ansible
-         force: true
-         mode: 0700
-         owner: keith
-         group: keith
-         url: |
-           https://raw.githubusercontent.com/arkenfox/user.js/master/updater.sh
+      - name: get arkenfox user.js (linux)
+        get_url:
+          dest: /home/keith/.mozilla/firefox/ansible
+          force: true
+          mode: 0600
+          owner: keith
+          group: keith
+          url: |
+            https://raw.githubusercontent.com/arkenfox/user.js/master/user.js
+      - name: get arkenfox prefsCleaner (linux)
+        get_url:
+          dest: /home/keith/.mozilla/firefox/ansible
+          force: true
+          mode: 0700
+          owner: keith
+          group: keith
+          url: |
+            https://raw.githubusercontent.com/arkenfox/user.js/master/prefsCleaner.sh
+      - name: get arkenfox updater (linux)
+        get_url:
+          dest: /home/keith/.mozilla/firefox/ansible
+          force: true
+          mode: 0700
+          owner: keith
+          group: keith
+          url: |
+            https://raw.githubusercontent.com/arkenfox/user.js/master/updater.sh
+      - name: copy user-overrides.js (linux)
+        template:
+          src: user-overrides.js.j2
+          dest: /home/keith/.mozilla/firefox/ansible/user-overrides.js
+          mode: 0600
+          owner: keith
+          group: keith
 
-#copy in user-overrides.js template
-#schedule updater.sh & prefsCleaner to run
-	#updater.sh has -e argument for ESR related prefs, what do with that?	
-#run updater.sh & prefsCleaner if needed
-	#base needed on last systemd run & whether user-overrides.js was changed
-	#run via a handler?
+
+
+#copy systemd service and timer
+#enable systemd timer @keith as ansible user
+#if ...last run was awhile ago? then
+	#run systemd service @keith as ansible user
 
 #Install and configure floccus
 
