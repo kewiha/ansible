@@ -1,6 +1,5 @@
 - name: install firefox (linux)
   tags: firefox
-  hosts: debian
   apt: 
     name: 
       - firefox-esr
@@ -8,27 +7,25 @@
     state: latest
     update_cache: yes
     cache_valid_time: 3600
+  when: ansible_distribution == 'Debian'
 
 - name: configure firefox (linux)
   tags: firefox
-  hosts: debian
   become: true
   become_user: keith
+  when: ansible_distribution == 'Debian'
   block:
   - name: check firefox profile exists (linux)
-    hosts: debian
     stat:
       path: /home/keith/.mozilla/firefox/ansible
     register: firefox_profile_exists_linux
   - name: make new firefox profile (linux)
-    hosts: debian
     shell: 
       cmd: |
         /usr/bin/firefox --createprofile "ansible /home/keith/.mozilla/firefox/ansible"
-    when: not firefox_profile_exists_linux.stat.exists  
+    when: not firefox_profile_exists_linux.stat.exists
 
   - name: set default firefox profile (linux)
-    hosts: debian
     block:
       - name: remove default profile line (linux)
         lineinfile: 
@@ -40,15 +37,13 @@
       - name: add default profile line (linux)
         blockinfile:
           path: /home/keith/.mozilla/firefox/profiles.ini
-          regexp: |
-            'Path=ansible'
-          block: |
+          insertafter: |
             Path=ansible
+          block: |
             Default=1
           state: present
         notify: run_arkenfox_unit
   - name: install arkenfox user.js and updater (linux)
-    hosts: debian
     block:
       - name: get arkenfox user.js (linux)
         get_url:
@@ -88,30 +83,32 @@
           owner: keith
           group: keith
         notify: run_arkenfox_unit
-      - name: copy arkenfox service
-        template:
-          src: arkenfox@.service.j2
-          dest: /etc/systemd/system/arkenfox@.service
-          mode: 744
-          owner: root
-          group: root
-        notify: run_arkenfox_unit
-      - name: copy arkenfox timer
-        template:
-          src: arkenfox@.timer.j2
-          dest: /etc/systemd/system/arkenfox@.timer
-          mode: 744
-          owner: root
-          group: root
-        notify: run_arkenfox_unit
-      - name: enable arkenfox timer
+      - name: set up arkenfox service
         become: true
         become_user: ansible
-        systemd:
-          name: |
-            arkenfox@keith.timer
-          state: started
-          enabled: yes
+        block:
+          - name: copy arkenfox service
+            template:
+              src: arkenfox@.service.j2
+              dest: /etc/systemd/system/arkenfox@.service
+              mode: 744
+              owner: root
+              group: root
+            notify: run_arkenfox_unit
+          - name: copy arkenfox timer
+            template:
+              src: arkenfox@.timer.j2
+              dest: /etc/systemd/system/arkenfox@.timer
+              mode: 744
+              owner: root
+              group: root
+            notify: run_arkenfox_unit
+          - name: enable arkenfox timer
+            systemd:
+              name: |
+                arkenfox@keith.timer
+              state: started
+              enabled: yes
 
 #enable systemd timer @keith as ansible user
 #if ...last run was awhile ago? then
