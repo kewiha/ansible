@@ -1,0 +1,87 @@
+- name: install firefox (linux)
+  hosts: debian
+  apt: 
+    name: 
+      - firefox-esr
+      - firefox-esr-l10n-en-ca
+    state: latest
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: configure firefox (linux)
+  hosts: debian
+  become: true
+  become_user: keith
+  block:
+  - name: check firefox profile exists (linux)
+    hosts: debian
+    stat:
+      path: /home/keith/.mozilla/firefox/ansible
+    register: firefox_profile_exists_linux
+  - name: make new firefox profile (linux)
+    hosts: debian
+    shell: 
+      cmd: |
+        /usr/bin/firefox --createprofile "ansible /home/keith/.mozilla/firefox/ansible"
+    when: not firefox_profile_exists_linux.stat.exists  
+
+  - name: set default firefox profile (linux)
+    hosts: debian
+    block:
+      - name: remove default profile line (linux)
+        lineinfile: 
+          path: /home/keith/.mozilla/firefox/profiles.ini
+          line: |
+            Default=1
+          state: absent
+      - name: add default profile line (linux)
+        blockinfile:
+          path: /home/keith/.mozilla/firefox/profiles.ini
+          regexp: |
+            'Path=ansible'
+          block: |
+            Path=ansible
+            Default=1
+          state: present
+
+  - name: install arkenfox (linux)
+    hosts: debian
+    block:
+      -name: get arkenfox user.js (linux)
+       get_url:
+         dest: /home/keith/.mozilla/firefox/ansible
+         force: true
+         mode: 0600
+         owner: keith
+         group: keith
+         url: |
+           https://raw.githubusercontent.com/arkenfox/user.js/master/user.js
+      -name: get arkenfox prefsCleaner (linux)
+       get_url:
+         dest: /home/keith/.mozilla/firefox/ansible
+         force: true
+         mode: 0700
+         owner: keith
+         group: keith
+         url: |
+           https://raw.githubusercontent.com/arkenfox/user.js/master/prefsCleaner.sh
+      -name: get arkenfox updater (linux)
+       get_url:
+         dest: /home/keith/.mozilla/firefox/ansible
+         force: true
+         mode: 0700
+         owner: keith
+         group: keith
+         url: |
+           https://raw.githubusercontent.com/arkenfox/user.js/master/updater.sh
+
+#copy in user-overrides.js template
+#schedule updater.sh & prefsCleaner to run
+	#updater.sh has -e argument for ESR related prefs, what do with that?	
+#run updater.sh & prefsCleaner if needed
+	#base needed on last systemd run & whether user-overrides.js was changed
+	#run via a handler?
+
+#Install and configure floccus
+
+
