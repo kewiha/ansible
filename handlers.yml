@@ -12,7 +12,7 @@
     
 - name: run_arkenfox_unit
   become: true
-  become_user: ansible
+  become_user: root
   tags: firefox
   service:
     name: arkenfox@keith.service

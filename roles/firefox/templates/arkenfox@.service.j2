@@ -15,4 +15,5 @@ ExecStart=/home/%i/.mozilla/firefox/ansible/updater.sh -u -s -e
 	#-e is for firefox-esr (instead of vanilla firefox), which is provided by debian stable
 ExecStart=/home/%i/.mozilla/firefox/ansible/prefsCleaner.sh
 	#-s starts immediately without user interaction
-ExecStart=/usr/bin/chown %i /home/%i/.mozilla/firefox/ansible/*
+ExecStart=/usr/bin/chown -R %i /home/%i/.mozilla/firefox/ansible/
+ExecStart=/usr/bin/chgrp -R %i /home/%i/.mozilla/firefox/ansible/

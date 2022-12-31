@@ -22,7 +22,7 @@
   - name: make new firefox profile (linux)
     shell: 
       cmd: |
-        /usr/bin/firefox --createprofile "ansible /home/keith/.mozilla/firefox/ansible"
+        /usr/bin/firefox --headless --createprofile "ansible /home/keith/.mozilla/firefox/ansible"
     when: not firefox_profile_exists_linux.stat.exists
 
   - name: set default firefox profile (linux)
@@ -45,16 +45,6 @@
         notify: run_arkenfox_unit
   - name: install arkenfox user.js and updater (linux)
     block:
-      - name: get arkenfox user.js (linux)
-        get_url:
-          dest: /home/keith/.mozilla/firefox/ansible
-          force: true
-          mode: 0600
-          owner: keith
-          group: keith
-          url: |
-            https://raw.githubusercontent.com/arkenfox/user.js/master/user.js
-        notify: run_arkenfox_unit
       - name: get arkenfox prefsCleaner (linux)
         get_url:
           dest: /home/keith/.mozilla/firefox/ansible
@@ -65,6 +55,18 @@
           url: |
             https://raw.githubusercontent.com/arkenfox/user.js/master/prefsCleaner.sh
         notify: run_arkenfox_unit
+      - name: get arkenfox user.js (linux)
+        get_url:
+          dest: /home/keith/.mozilla/firefox/ansible
+          force: true
+          mode: 0700
+          owner: keith
+          group: keith
+          url: |
+            https://raw.githubusercontent.com/arkenfox/user.js/master/user.js
+        notify: run_arkenfox_unit
+        changed_when: false
+          #for firefox-esr, updater enables preferences in user.js so it wil always need replacement
       - name: get arkenfox updater (linux)
         get_url:
           dest: /home/keith/.mozilla/firefox/ansible
@@ -85,7 +87,7 @@
         notify: run_arkenfox_unit
       - name: set up arkenfox service
         become: true
-        become_user: ansible
+        become_user: root
         block:
           - name: copy arkenfox service
             template:
@@ -105,8 +107,7 @@
             notify: run_arkenfox_unit
           - name: enable arkenfox timer
             systemd:
-              name: |
-                arkenfox@keith.timer
+              name: arkenfox@keith.timer
               state: started
               enabled: yes
 
