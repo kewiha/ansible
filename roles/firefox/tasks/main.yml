@@ -24,25 +24,23 @@
       cmd: |
         /usr/bin/firefox --headless --createprofile "ansible /home/keith/.mozilla/firefox/ansible"
     when: not firefox_profile_exists_linux.stat.exists
-
   - name: set default firefox profile (linux)
     block:
       - name: remove default profile line (linux)
         lineinfile: 
           path: /home/keith/.mozilla/firefox/profiles.ini
-          line: |
-            Default=1
+          regexp: 'Default=1'
+          line: Default=1
           state: absent
-        notify: run_arkenfox_unit
       - name: add default profile line (linux)
-        blockinfile:
+        lineinfile:
           path: /home/keith/.mozilla/firefox/profiles.ini
           insertafter: |
-            Path=ansible
-          block: |
-            Default=1
+            '[Install.*]'
+          regexp: 'Default=.*'
+          line: |
+            Default=ansible
           state: present
-        notify: run_arkenfox_unit
   - name: install arkenfox user.js and updater (linux)
     block:
       - name: get arkenfox prefsCleaner (linux)
