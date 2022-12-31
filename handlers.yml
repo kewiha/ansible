@@ -16,5 +16,5 @@
   tags: firefox
   service:
     name: arkenfox@keith.service
-    state: restarted
+    state: started
     

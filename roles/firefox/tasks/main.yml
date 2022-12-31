@@ -9,6 +9,24 @@
     cache_valid_time: 3600
   when: ansible_distribution == 'Debian'
 
+- name: set firefox policy (linux)
+  tags: firefox
+  block: 
+    - name: create policies folder
+      file: 
+        path: /usr/lib/firefox-esr/distribution
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+    - name: copy policies.json
+      template:
+        src: policies.json.j2
+        dest: /usr/lib/firefox-esr/distribution/policies.json
+        mode: 0755
+        owner: root
+        group: root
+
 - name: configure firefox (linux)
   tags: firefox
   become: true
@@ -41,6 +59,13 @@
           line: |
             Default=ansible
           state: present
+  - name: copy floccus file to profile
+    copy:
+      src: "{{ floccus_export_path }}"    
+      dest: /home/keith/.mozilla/firefox/ansible
+      owner: keith
+      group: keith
+      mode: 0700
   - name: install arkenfox user.js and updater (linux)
     block:
       - name: get arkenfox prefsCleaner (linux)
@@ -108,11 +133,9 @@
               name: arkenfox@keith.timer
               state: started
               enabled: yes
-
-#enable systemd timer @keith as ansible user
-#if ...last run was awhile ago? then
-#run systemd service @keith as ansible user
-
-#Install and configure floccus
-
+  - name: install firefox extensions
+    include_tasks: install_firefox_extensions.yml
+    loop: 
+      - { id: 'uBlock0@raymondhill.net', pageURL: 'https://addons.mozilla.org/en-US/firefox/addon/ublock-origin/', downloadURL: 'https://addons.mozilla.org/firefox/downloads/file/4047353/ublock_origin-1.46.0.xpi' }
+      - { id: 'floccus@handmadeideas.org', pageURL: 'https://addons.mozilla.org/en-US/firefox/addon/floccus/', downloadURL: 'https://addons.mozilla.org/firefox/downloads/file/4050172/floccus-4.18.0.xpi' }
 
