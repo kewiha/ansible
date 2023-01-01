@@ -9,6 +9,22 @@
     cache_valid_time: 3600
   when: ansible_distribution == 'Debian'
 
+- name: check firefox is not running (linux)
+  tags: firefox
+  block: 
+    - name: get running firefox pids (linux)
+      shell:
+        cmd: pgrep firefox
+      register: firefox_pids
+      changed_when: false
+      failed_when: firefox_pids.rc > 1
+        #needed because pgrep return code is 1 if no pids are returned
+    - name: check if pid list is empty
+      fail:
+        msg: firefox is running, stop it
+      when: (firefox_pids.stdout | length > 0)
+
+
 - name: set firefox policy (linux)
   tags: firefox
   block: 
@@ -133,9 +149,4 @@
               name: arkenfox@keith.timer
               state: started
               enabled: yes
-  - name: install firefox extensions
-    include_tasks: install_firefox_extensions.yml
-    loop: 
-      - { id: 'uBlock0@raymondhill.net', pageURL: 'https://addons.mozilla.org/en-US/firefox/addon/ublock-origin/', downloadURL: 'https://addons.mozilla.org/firefox/downloads/file/4047353/ublock_origin-1.46.0.xpi' }
-      - { id: 'floccus@handmadeideas.org', pageURL: 'https://addons.mozilla.org/en-US/firefox/addon/floccus/', downloadURL: 'https://addons.mozilla.org/firefox/downloads/file/4050172/floccus-4.18.0.xpi' }
 

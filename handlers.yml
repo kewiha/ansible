@@ -9,7 +9,7 @@
     name: fail2ban
     state: restarted
     enabled: true
-    
+ 
 - name: run_arkenfox_unit
   become: true
   become_user: root
@@ -17,4 +17,3 @@
   service:
     name: arkenfox@keith.service
     state: started
-    
