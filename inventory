@@ -9,11 +9,16 @@ all:
     firefox:
       hosts:
         a68apu:
+        UOITLT-W10.local:
     servers:
       hosts:
     clients:
       hosts:
         a68apu:
+        UOITLT-W10.local:
+    windows:
+      hosts:
+        UOITLT-W10.local:
     
 
 #[debian]

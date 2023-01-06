@@ -1,11 +1,11 @@
 ---
-
-- name: update debian
+##todo: make a common play for setting up ssh keys on linux, call it in both setup and run
+- name: set up debian hosts
   hosts: debian
   remote_user: keith
   become: true
   vars:
-    ansible_ssh_private_key_file: "{{ ssh_key_keith_path }}"
+    ansible_ssh_private_key_file: "{{ ssh_key_keith_priv_path }}"
   tasks:
     - name: install apt updates
       apt:
@@ -15,19 +15,16 @@
         autoremove: true
         autoclean: true
       when: ansible_distribution == "Debian"
-    
     - name: create ssh-user group
       group:
         name: ssh-user
         state: present
-
     - name: add keith to ssh-user group and set shell
       user:
         name: keith
         groups: ssh-user
         append: true
         shell: /bin/bash
-
     - name: create ansible user
       user:
         name: ansible
@@ -37,8 +34,9 @@
     - name: add ssh pubkey for ansible
       authorized_key: 
         user: ansible
-        key: "{{ ssh_key_ansible_pub_content }}"
+        key: "{{ item['value']['pub_content'] }}"
         exclusive: true
+      loop: "{{ ssh_keys | dict2items }}"
     - name: add ansible user to sudoers
       lineinfile:
         path: /etc/sudoers.d/ansible

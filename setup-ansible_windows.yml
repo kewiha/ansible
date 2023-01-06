@@ -1,0 +1,17 @@
+---
+### Usage ###
+#before ssh keys (passwd): ansible-playbook --ask-pass setup-ansible_windows.yml
+#after ssh keys (pubkey): ansible-playbook setup-ansible_windows.yml
+- name: set up windows hosts
+  hosts: windows
+  remote_user: keith
+  vars:
+    ansible_ssh_private_key_file: "{{ ssh_key_keith_priv_path }}"
+  tasks:
+    - name: add ssh pubkeys for keith
+      lineinfile:
+        path: C:\users\keith\.ssh\authorized_keys
+        line: "{{ item['value']['pub_content'] }}"
+      loop: "{{ ssh_keys | dict2items }}"
+
+#create ansible user

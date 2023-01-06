@@ -1,9 +1,32 @@
 ---
-
-- name: output thing
+- name: set up all hosts
   hosts: all
+  remote_user: keith
+  vars:
+    ansible_ssh_private_key_file: "{{ ssh_key_keith_priv_path }}"
   tasks:
-    - name: output thing
-      debug:
-        msg: "{{ item[1] }} {{ item[0]['value']['size'] }} {{ item[0]['value']['path'] }}"
-      loop: "{{ tmpfs_user_block|dict2items| product(gui_users)|list }}"
+    - name: add ssh pubkey for ansible
+      debug: 
+      #authorized_key:
+        msg: "{{ item['value']['pub_content'] }}"
+        #user: ansible
+        #key: "{{ item['value']['pub_content'] }}"
+        #exclusive: true    - name: add ssh pubkey for ansible
+      loop: "{{ ssh_keys | dict2items }}"
+
+#- name: output thing
+#  hosts: windows
+#  remote_user: keith
+#  vars:
+ #   ansible_shell_type: cmd
+#    ansible_connection: ssh
+  #  ansible_ssh_private_key_file: "{{ ssh_key_keith_priv_path }}"
+#  tasks: 
+#    - name: test
+#      debug:
+#        msg: "yay"
+  #tasks:
+  #  - name: output thing
+  #    debug:
+  #      msg: "{{ item[1] }} {{ item[0]['value']['size'] }} {{ item[0]['value']['path'] }}"
+  #    loop: "{{ tmpfs_user_block|dict2items| product(gui_users)|list }}"
