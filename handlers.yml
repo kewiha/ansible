@@ -17,3 +17,10 @@
   service:
     name: arkenfox@keith.service
     state: started
+
+- name: remount_filesystems
+  become: true
+  become_user: root
+  shell:
+    cmd: |
+      mount -a

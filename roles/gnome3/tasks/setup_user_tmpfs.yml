@@ -1,0 +1,39 @@
+---
+- name: sets up tmpfs for each user
+  tags: gnome3
+  block:
+    - name: define .cache folder
+      set_fact:
+        tmpfs_dir: "/home/{{ item[1] }}/{{ item[0]['value']['path'] }}"
+    - name: check if .cache is mounted
+      shell:
+        cmd: |
+          cat /proc/mounts | grep "{{ tmpfs_dir }}" | awk '{print $2}'
+      register: proc_mounts
+      changed_when: false
+    - name: delete .cache if not mounted
+      file:
+        path: "{{ tmpfs_dir }}"
+        state: absent
+      when: not tmpfs_dir in proc_mounts.stdout_lines
+      notify: remount_filesystems
+    - name: recreate .cache if not mounted
+      file:
+        path: "{{ tmpfs_dir }}"
+        state: directory
+        owner: "{{ item[1] }}"
+        group: "{{ item[1] }}"
+        mode: 0755
+      when: not tmpfs_dir in proc_mounts.stdout_lines
+      notify: remount_filesystems
+    - name: tmpfs .cache
+      lineinfile:
+        path: /etc/fstab
+        regexp: |
+          .*{{ tmpfs_dir }}.*
+        line: |
+          tmpfs_{{ item[1] }}_{{ item[0]['value']['path'] }} {{ tmpfs_dir }} tmpfs rw,nodev,nosuid,uid={{ item[1] }},gid={{ item[1] }},mode=0755,size=1G 0 0
+        state: present
+      notify: remount_filesystems
+    - name: Flush handlers
+      meta: flush_handlers

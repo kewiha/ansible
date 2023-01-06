@@ -8,6 +8,17 @@ admin_users:
   - keith
   - ansible
 
+gui_users:
+  - keith
+
+tmpfs_user_block:
+  dotcache:
+    path: .cache
+    size: 1G
+  dotlocal_share_gedit:
+    path: .local/share/gedit
+    size: 100M
+
 sshd_host_key_paths:
   - /etc/ssh/ssh_host_ecdsa_key
   - /etc/ssh/ssh_host_ecdsa_key.pub
