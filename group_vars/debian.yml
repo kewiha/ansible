@@ -1,9 +1,11 @@
 debian_packages_common: 
+  - ansible
   - ca-certificates
   - dosfstools
   - fail2ban
   - fio
   - gdisk
+  - git
   - htop
   - iotop
   - iperf3

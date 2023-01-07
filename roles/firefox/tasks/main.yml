@@ -1,14 +1,3 @@
-- name: install firefox (linux)
-  tags: firefox
-  apt: 
-    name: 
-      - firefox-esr
-      - firefox-esr-l10n-en-ca
-    state: latest
-    update_cache: yes
-    cache_valid_time: 3600
-  when: ansible_distribution == 'Debian'
-
 - name: check firefox is not running (linux)
   tags: firefox
   block: 
@@ -24,7 +13,28 @@
         msg: firefox is running, stop it
       when: (firefox_pids.stdout | length > 0)
 
+- name: install firefox (linux)
+  tags: firefox
+  apt:
+    name:
+      - firefox-esr
+      - firefox-esr-l10n-en-ca
+    state: latest
+    update_cache: yes
+    cache_valid_time: 3600
+  when: ansible_distribution == 'Debian'
 
+- name: remove unwanted firefox apt packages
+  tags: firefox,apt
+  apt:
+    name: "{{ firefox_packages_unwanted }}"
+    state: absent
+    autoclean: true
+    autoremove: true
+    purge: true
+
+
+### policies.json ###
 - name: set firefox policy (linux)
   tags: firefox
   block: 
@@ -43,6 +53,7 @@
         owner: root
         group: root
 
+### browser profile ###
 - name: configure firefox (linux)
   tags: firefox
   become: true
@@ -75,78 +86,121 @@
           line: |
             Default=ansible
           state: present
-  - name: copy floccus file to profile
-    copy:
-      src: "{{ floccus_export_path }}"    
-      dest: /home/keith/.mozilla/firefox/ansible
-      owner: keith
-      group: keith
-      mode: 0700
-  - name: install arkenfox user.js and updater (linux)
-    block:
-      - name: get arkenfox prefsCleaner (linux)
-        get_url:
-          dest: /home/keith/.mozilla/firefox/ansible
-          force: true
-          mode: 0700
-          owner: keith
-          group: keith
-          url: |
-            https://raw.githubusercontent.com/arkenfox/user.js/master/prefsCleaner.sh
-        notify: run_arkenfox_unit
-      - name: get arkenfox user.js (linux)
-        get_url:
-          dest: /home/keith/.mozilla/firefox/ansible
-          force: true
-          mode: 0700
-          owner: keith
-          group: keith
-          url: |
-            https://raw.githubusercontent.com/arkenfox/user.js/master/user.js
-        notify: run_arkenfox_unit
-        changed_when: false
-          #for firefox-esr, updater enables preferences in user.js so it wil always need replacement
-      - name: get arkenfox updater (linux)
-        get_url:
-          dest: /home/keith/.mozilla/firefox/ansible
-          force: true
-          mode: 0700
-          owner: keith
-          group: keith
-          url: |
-            https://raw.githubusercontent.com/arkenfox/user.js/master/updater.sh
-        notify: run_arkenfox_unit
-      - name: copy user-overrides.js (linux)
-        template:
-          src: user-overrides.js.j2
-          dest: /home/keith/.mozilla/firefox/ansible/user-overrides.js
-          mode: 0600
-          owner: keith
-          group: keith
-        notify: run_arkenfox_unit
-      - name: set up arkenfox service
-        become: true
-        become_user: root
-        block:
-          - name: copy arkenfox service
-            template:
-              src: arkenfox@.service.j2
-              dest: /etc/systemd/system/arkenfox@.service
-              mode: 744
-              owner: root
-              group: root
-            notify: run_arkenfox_unit
-          - name: copy arkenfox timer
-            template:
-              src: arkenfox@.timer.j2
-              dest: /etc/systemd/system/arkenfox@.timer
-              mode: 744
-              owner: root
-              group: root
-            notify: run_arkenfox_unit
-          - name: enable arkenfox timer
-            systemd:
-              name: arkenfox@keith.timer
-              state: started
-              enabled: yes
 
+### Extension Config ###
+- name: copy floccus file to profile
+  tags: firefox
+  copy:
+    src: "{{ floccus_export_path }}"    
+    dest: /home/keith/.mozilla/firefox/ansible
+    owner: keith
+    group: keith
+    mode: 0700
+- name: set up extension-preferences.json
+  tags: firefox
+  become: true
+  become_user: root
+  block:
+    - name: load extension-preferences.json stub to be added
+      include_vars:
+        file: extension-preferences_stub.json
+        name: firefox_extension_prefs_stub
+    - name: stat extension-preferences.json
+      stat:
+        path: /home/keith/.mozilla/firefox/ansible/extension-preferences.json
+      register: extension_preferences_json_stat
+    - name: append to extension-preferences.json (if present)
+      when: extension_preferences_json_stat.stat.exists
+      block:
+        - name: load current extension-preferences.json
+          slurp:
+            src: /home/keith/.mozilla/firefox/ansible/extension-preferences.json
+          register: firefox_extension_prefs
+        - name: combine existing and stub extension-preferences.jsons
+          set_fact:
+            firefox_extension_prefs_combined: "{{ firefox_extension_prefs.content|b64decode|from_json | default([]) | combine(firefox_extension_prefs_stub) }}"
+    - name: create new extension-preferences.json (if missing)
+      when: not extension_preferences_json_stat.stat.exists
+      block:
+        - name: rename json var
+          set_fact:
+            firefox_extension_prefs_combined: "{{ firefox_extension_prefs_stub }}"
+    - name: write extension-preferences.json
+      copy:
+        content: "{{ firefox_extension_prefs_combined | to_json }}"
+        dest: /home/keith/.mozilla/firefox/ansible/extension-preferences.json
+        mode: 0644
+        owner: keith
+        group: keith
+
+### Arkenfox ###
+- name: install arkenfox user.js and updater (linux)
+  tags: firefox
+  become: true
+  become_user: keith
+  block:
+    - name: get arkenfox prefsCleaner (linux)
+      get_url:
+        dest: /home/keith/.mozilla/firefox/ansible
+        force: true
+        mode: 0700
+        owner: keith
+        group: keith
+        url: |
+          https://raw.githubusercontent.com/arkenfox/user.js/master/prefsCleaner.sh
+      notify: run_arkenfox_unit
+    - name: get arkenfox user.js (linux)
+      get_url:
+        dest: /home/keith/.mozilla/firefox/ansible
+        force: true
+        mode: 0700
+        owner: keith
+        group: keith
+        url: |
+          https://raw.githubusercontent.com/arkenfox/user.js/master/user.js
+      notify: run_arkenfox_unit
+      changed_when: false
+        #for firefox-esr, updater enables preferences in user.js so it wil always need replacement
+    - name: get arkenfox updater (linux)
+      get_url:
+        dest: /home/keith/.mozilla/firefox/ansible
+        force: true
+        mode: 0700
+        owner: keith
+        group: keith
+        url: |
+          https://raw.githubusercontent.com/arkenfox/user.js/master/updater.sh
+      notify: run_arkenfox_unit
+    - name: copy user-overrides.js (linux)
+      template:
+        src: user-overrides.js.j2
+        dest: /home/keith/.mozilla/firefox/ansible/user-overrides.js
+        mode: 0600
+        owner: keith
+        group: keith
+      notify: run_arkenfox_unit
+    - name: set up arkenfox service
+      become: true
+      become_user: root
+      block:
+        - name: copy arkenfox service
+          template:
+            src: arkenfox@.service.j2
+            dest: /etc/systemd/system/arkenfox@.service
+            mode: 744
+            owner: root
+            group: root
+          notify: run_arkenfox_unit
+        - name: copy arkenfox timer
+          template:
+            src: arkenfox@.timer.j2
+            dest: /etc/systemd/system/arkenfox@.timer
+            mode: 744
+            owner: root
+            group: root
+          notify: run_arkenfox_unit
+        - name: enable arkenfox timer
+          systemd:
+            name: arkenfox@keith.timer
+            state: started
+            enabled: yes

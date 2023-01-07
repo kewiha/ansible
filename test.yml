@@ -1,35 +1,48 @@
 ---
-- name: set up all hosts
-  hosts: debian
-  remote_user: keith
-  vars:
-    ansible_ssh_private_key_file: "{{ ssh_key_keith_priv_path }}"
+- name: test firefox json manipulation
+  hosts: firefox
+  become: true
+  become_user: keith
   tasks:
-    - name: add ssh pubkey
-      debug: 
-      #authorized_key:
-        msg: "{{ ssh_pubkeys[item] | join('\n') }}"
-        #msg: "username {{ item[1] }} {{ item[0]['value'] }}"
-#        msg: "username {{ item[1] }} {{ item[0][item[1]]['value']['pub_content'] }}"
-        #user: ansible
-        #key: "{{ item['value']['pub_content'] }}"
-        #exclusive: true    - name: add ssh pubkey for ansible
-#      when: "{{ item[0]['key'] }}" == "{{ item[1] }}"
-      #loop: "{{ ssh_keys[ | dict2items | product(admin_users) | list }}"
-      loop: "{{ admin_users }}"
-#- name: output thing
-#  hosts: windows
-#  remote_user: keith
-#  vars:
- #   ansible_shell_type: cmd
-#    ansible_connection: ssh
-  #  ansible_ssh_private_key_file: "{{ ssh_key_keith_priv_path }}"
-#  tasks: 
-#    - name: test
-#      debug:
-#        msg: "yay"
-  #tasks:
-  #  - name: output thing
-  #    debug:
-  #      msg: "{{ item[1] }} {{ item[0]['value']['size'] }} {{ item[0]['value']['path'] }}"
-  #    loop: "{{ tmpfs_user_block|dict2items| product(gui_users)|list }}"
+    - name: load json stub to be added
+      include_vars:
+        file: extension-preferences_stub.json
+        name: firefox_extension_prefs_stub
+
+    - name: stat extension-preferences.json
+      stat:
+        path: /home/keith/.mozilla/firefox/ansible/extension-preferences.json
+      register: extension_preferences_json_stat
+
+#if extension-preferences.json exists
+    - name: append to json
+      when: extension_preferences_json_stat.stat.exists
+      block:
+        - name: load json
+          slurp: 
+            src: /home/keith/.mozilla/firefox/ansible/extension-preferences.json 
+          register: firefox_extension_prefs
+        - name: combine jsons
+          set_fact:
+            firefox_extension_prefs_combined: "{{ firefox_extension_prefs.content|b64decode|from_json | default([]) | combine(firefox_extension_prefs_stub) }}"
+
+# if extension-preferences.json does not exist
+    - name: create new json
+      when: not extension_preferences_json_stat.stat.exists
+      block:
+         - name: rename json var
+           set_fact:
+             firefox_extension_prefs_combined: "{{ firefox_extension_prefs_stub }}"
+
+#common
+    - name: write var to file
+      copy:
+        content: "{{ firefox_extension_prefs_combined | to_json }}"
+        dest: /home/keith/.mozilla/firefox/ansible/extension-preferences.json
+
+    - name: fix permissions
+      file:
+        path: /home/keith/.mozilla/firefox/ansible/extension-preferences.json
+        mode: 0644
+        owner: keith
+        group: keith
