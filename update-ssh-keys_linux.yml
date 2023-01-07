@@ -1,0 +1,7 @@
+---
+- name: add ssh pubkeys for admins (linux)
+  authorized_key:
+    user: ansible
+    key: "{{ item[0]['value']['pub_content'] }}"
+    exclusive: true
+  when: "{{ item[0]['value']['user'] }}" == "{{ item[1] }}"

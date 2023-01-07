@@ -2,7 +2,7 @@
 - name: configure tmpfs for each user
   tags: gnome3
   include_tasks: setup_user_tmpfs.yml
-  loop: "{{ tmpfs_user_block|dict2items| product(gui_users)|list }}"
+  loop: "{{ tmpfs_user_block | dict2items | product(gui_users) | list }}"
 
 ### gnome3 settings ###
 - name: configure dconf keys

@@ -31,12 +31,6 @@
         groups: sudo,ssh-user
         append: true
         shell: /bin/bash
-    - name: add ssh pubkey for ansible
-      authorized_key: 
-        user: ansible
-        key: "{{ item['value']['pub_content'] }}"
-        exclusive: true
-      loop: "{{ ssh_keys | dict2items }}"
     - name: add ansible user to sudoers
       lineinfile:
         path: /etc/sudoers.d/ansible
@@ -56,3 +50,6 @@
           if [ ! -z "$(id -nG "$USER" | grep "sudo")" ] ; then
             PATH="$PATH:/usr/local/sbin:/usr/sbin:/sbin"
           fi
+    - name: add ssh pubkey for ansible
+      include_tasks: update-ssh-keys_linux.yml
+      loop: "{{ ssh_keys | dict2items | product(admin_users) | list }}"
