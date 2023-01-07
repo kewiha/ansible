@@ -1,8 +1,0 @@
-{
-  "uBlock0@raymondhill.net": {
-    "origins": [],
-    "permissions": [
-      "internal:privateBrowsingAllowed"
-    ]
-  }
-}
