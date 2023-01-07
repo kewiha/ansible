@@ -14,7 +14,7 @@
     user: "{{ item }}"
     key: "{{ ssh_pubkeys[item] | join('\n') }}"
     exclusive: true
-- name: set PATH for {{ item }}
+- name: configure .profile for {{ item }}
   blockinfile:
     path: "/home/{{ item }}/.profile"
     state: present
@@ -23,6 +23,22 @@
       if [ ! -z "$(id -nG "$USER" | grep "sudo")" ] ; then
         PATH="$PATH:/usr/local/sbin:/usr/sbin:/sbin"
       fi
+      unset HISTFILE
+      unset HISTORY
+- name: configure .bashrc
+  blockinfile:
+    path: "/home/{{ item }}/.bashrc"
+    state: present
+    insertafter: EOF
+    block: |
+      if [ ! -z "$(id -nG "$USER" | grep "sudo")" ] ; then
+        PATH="$PATH:/usr/local/sbin:/usr/sbin:/sbin"
+      fi
+      unset HISTFILE
+- name: delete bash history
+  file:
+    path: "/home/{{ item }}/.bash_history"
+    state: absent 
 - name: set shell for {{ item }}
   user:
     name: "{{ item }}"
