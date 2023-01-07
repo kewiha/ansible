@@ -1,14 +1,5 @@
 ---
-
-#- name: get processor info
-#  hosts: debian
-#  become: true
-#  tasks:
-#    - name: cat proc info
-#      debug:
-#        msg: 
-#          - "cpu vendor is {{ ansible_processor[1] }}"
-
+#Usage: ansible-playbook run-ansible_linux.yml
 - name: run debian common tasks
   hosts: debian
   become: true

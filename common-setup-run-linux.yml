@@ -1,0 +1,29 @@
+---
+
+- name: create ssh-user group
+  group:
+    name: ssh-user
+    state: present
+- name: add {{ item }} to ssh-user group
+  user:
+    name: "{{ item }}"
+    groups: ssh-user
+    append: true
+- name: add ssh pubkeys for {{ item }} (linux)
+  authorized_key:
+    user: "{{ item }}"
+    key: "{{ ssh_pubkeys[item] | join('\n') }}"
+    exclusive: true
+- name: set PATH for {{ item }}
+  blockinfile:
+    path: "/home/{{ item }}/.profile"
+    state: present
+    insertafter: EOF
+    block: |
+      if [ ! -z "$(id -nG "$USER" | grep "sudo")" ] ; then
+        PATH="$PATH:/usr/local/sbin:/usr/sbin:/sbin"
+      fi
+- name: set shell for {{ item }}
+  user:
+    name: "{{ item }}"
+    shell: /bin/bash

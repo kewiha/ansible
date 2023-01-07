@@ -1,5 +1,5 @@
 ---
-##todo: make a common play for setting up ssh keys on linux, call it in both setup and run
+#Usage: ansible-playbook --ask-become-pass setup-ansible_linux.yml
 - name: set up debian hosts
   hosts: debian
   remote_user: keith
@@ -7,28 +7,10 @@
   vars:
     ansible_ssh_private_key_file: "{{ ssh_key_keith_priv_path }}"
   tasks:
-    - name: install apt updates
-      apt:
-        update_cache: yes
-        cache_valid_time: yes
-        upgrade: safe
-        autoremove: true
-        autoclean: true
-      when: ansible_distribution == "Debian"
-    - name: create ssh-user group
-      group:
-        name: ssh-user
-        state: present
-    - name: add keith to ssh-user group and set shell
-      user:
-        name: keith
-        groups: ssh-user
-        append: true
-        shell: /bin/bash
     - name: create ansible user
       user:
         name: ansible
-        groups: sudo,ssh-user
+        groups: sudo
         append: true
         shell: /bin/bash
     - name: add ansible user to sudoers
@@ -41,15 +23,6 @@
         group: root
         mode: 0440
         validate: visudo -cf %s
-    - name: configure PATH for ansible
-      blockinfile:
-        path: /home/ansible/.profile
-        state: present
-        insertafter: EOF
-        block: |
-          if [ ! -z "$(id -nG "$USER" | grep "sudo")" ] ; then
-            PATH="$PATH:/usr/local/sbin:/usr/sbin:/sbin"
-          fi
-    - name: add ssh pubkey for ansible
-      include_tasks: update-ssh-keys_linux.yml
-      loop: "{{ ssh_keys | dict2items | product(admin_users) | list }}"
+    - name: configure ssh-user group, pubkeys, PATH for {{ item }}
+      include_tasks: common-setup-run-linux.yml
+      loop: "{{ admin_users }}"

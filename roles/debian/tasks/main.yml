@@ -1,14 +1,6 @@
-### shell ###
-- name: configure PATH for admins
-  tags: shell
-  blockinfile:
-    path: "/home/{{ item }}/.profile"
-    state: present
-    insertafter: EOF
-    block: |
-      if [ ! -z "$(id -nG "$USER" | grep "sudo")" ] ; then
-        PATH="$PATH:/usr/local/sbin:/usr/sbin:/sbin"
-      fi
+### Common with setup-ansible_linux.yml ###
+- name: configure ssh-user group, pubkeys, PATH for {{ item }}
+  include_tasks: common-setup-run-linux.yml
   loop: "{{ admin_users }}"
 
 ### network ###

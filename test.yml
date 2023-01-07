@@ -8,14 +8,15 @@
     - name: add ssh pubkey
       debug: 
       #authorized_key:
-        msg: "username {{ item[1] }} {{ item[0][{{ item[1] }}] }}"
-#        msg: "username {{ item[1] }} {{ item[0][\"{{ item[1] }}\"]['value']['pub_content'] }}"
+        msg: "{{ ssh_pubkeys[item] | join('\n') }}"
+        #msg: "username {{ item[1] }} {{ item[0]['value'] }}"
+#        msg: "username {{ item[1] }} {{ item[0][item[1]]['value']['pub_content'] }}"
         #user: ansible
         #key: "{{ item['value']['pub_content'] }}"
         #exclusive: true    - name: add ssh pubkey for ansible
 #      when: "{{ item[0]['key'] }}" == "{{ item[1] }}"
-      loop: "{{ ssh_keys | dict2items | product(admin_users) | list }}"
-
+      #loop: "{{ ssh_keys[ | dict2items | product(admin_users) | list }}"
+      loop: "{{ admin_users }}"
 #- name: output thing
 #  hosts: windows
 #  remote_user: keith
