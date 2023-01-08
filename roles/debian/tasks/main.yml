@@ -217,6 +217,21 @@
            LANGUAGE="en_CA:en"
          create: true
       notify: locale_gen
+    - name: Flush handlers
+      meta: flush_handlers 
+    - name: install localepurge config file
+      template:
+        src: locale.nopurge.j2
+        dest: /etc/locale.nopurge
+        owner: root
+        group: root
+        mode: 0644
+      register: locale_nopurge_config_changed
+    - name: run localepurge
+      shell:
+        cmd: /usr/sbin/localepurge
+      when: locale_nopurge_config_changed.changed
+      notify: locale_gen
 
 - name: check timezone, RTC, and NTP are ok
   tags: locale,time
@@ -367,4 +382,5 @@
             name: sshd
             enabled: true
             state: reloaded
+            daemon_reload: true
           when: sshd_config_changed.changed

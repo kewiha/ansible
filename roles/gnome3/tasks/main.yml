@@ -102,19 +102,19 @@
    #may want to increase logind's InhibitDelayMaxSec to a few minutes to accomodate this
 
 ### locales ###
-- name: localepurge
-  tags: gnome3,locale
-  block:
-  - name: install localepurge config file
-    template:
-      src: locale.nopurge.j2
-      dest: /etc/locale.nopurge
-      owner: root
-      group: root
-      mode: 0644
-    register: locale_nopurge_config_changed  
-  - name: run localepurge
-    shell:
-      cmd: /usr/sbin/localepurge
-    when: locale_nopurge_config_changed.changed
-    notify: locale_gen
+#- name: localepurge
+#  tags: gnome3,locale
+#  block:
+#  - name: install localepurge config file
+#    template:
+#      src: locale.nopurge.j2
+#      dest: /etc/locale.nopurge
+#      owner: root
+#      group: root
+#      mode: 0644
+#    register: locale_nopurge_config_changed  
+#  - name: run localepurge
+#    shell:
+#      cmd: /usr/sbin/localepurge
+#    when: locale_nopurge_config_changed.changed
+#    notify: locale_gen

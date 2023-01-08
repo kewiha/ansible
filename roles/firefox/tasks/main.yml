@@ -132,6 +132,7 @@
         mode: 0644
         owner: keith
         group: keith
+      changed_when: false
 
 ### Arkenfox ###
 - name: install arkenfox user.js and updater (linux)

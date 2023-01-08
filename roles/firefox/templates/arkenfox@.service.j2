@@ -7,13 +7,14 @@ Description=Update arkenfox user.js for Firefox, and clean prefs for %i
 After=multi-user.target network-online.target
 
 [Service]
+WorkingDirectory=/home/%i/.mozilla/firefox/ansible
 Type=oneshot
 RemainAfterExit=no
 ExecStart=/home/%i/.mozilla/firefox/ansible/updater.sh -u -s -e
 	#-u updates updater.sh without asking
 	#-s updates user.js without asking
 	#-e is for firefox-esr (instead of vanilla firefox), which is provided by debian stable
-ExecStart=/home/%i/.mozilla/firefox/ansible/prefsCleaner.sh
-	#-s starts immediately without user interaction
+ExecStart=/home/%i/.mozilla/firefox/ansible/prefsCleaner.sh -s
+	#-s starts immediately without user interaction if provided
 ExecStart=/usr/bin/chown -R %i /home/%i/.mozilla/firefox/ansible/
 ExecStart=/usr/bin/chgrp -R %i /home/%i/.mozilla/firefox/ansible/

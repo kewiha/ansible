@@ -1,23 +1,3 @@
-- name: locale_gen
-  tags: locale
-  shell:
-    cmd: /usr/sbin/locale-gen
-
-- name: restart_fail2ban
-  tags: security
-  service: 
-    name: fail2ban
-    state: restarted
-    enabled: true
- 
-- name: run_arkenfox_unit
-  become: true
-  become_user: root
-  tags: firefox
-  service:
-    name: arkenfox@keith.service
-    state: started
-
 - name: remount_filesystems
   become: true
   become_user: root
