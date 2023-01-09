@@ -2,7 +2,7 @@
 - name: configure tmpfs for each user
   tags: gnome3
   include_tasks: setup_user_tmpfs.yml
-  loop: "{{ tmpfs_user_block | dict2items | product(gui_users) | list }}"
+  loop: "{{ gnome3_tmpfs_user_block | dict2items | product(gui_users) | list }}"
 
 ### gnome3 settings ###
 - name: configure dconf keys
@@ -101,20 +101,14 @@
     line: "Unattended-Upgrade::InstallOnShutdown \"true\";"
    #may want to increase logind's InhibitDelayMaxSec to a few minutes to accomodate this
 
-### locales ###
-#- name: localepurge
-#  tags: gnome3,locale
-#  block:
-#  - name: install localepurge config file
-#    template:
-#      src: locale.nopurge.j2
-#      dest: /etc/locale.nopurge
-#      owner: root
-#      group: root
-#      mode: 0644
-#    register: locale_nopurge_config_changed  
-#  - name: run localepurge
-#    shell:
-#      cmd: /usr/sbin/localepurge
-#    when: locale_nopurge_config_changed.changed
-#    notify: locale_gen
+### libreoffice ###
+- name: configure libreoffice for {{ item }}
+  tags: gnome3,libreoffice
+  block:
+    - name: disable picklist for {{ item }}
+      lineinfile:
+        path: /home/{{ item }}/.config/libreoffice/4/user/registrymodifications.xcu
+        regexp: '<item oor:path="/org.openoffice.Office.Common/History"><prop oor:name="PickListSize" oor:op="fuse"><value>.*</value></prop></item>'
+        line: |
+          <item oor:path="/org.openoffice.Office.Common/History"><prop oor:name="PickListSize" oor:op="fuse"><value>0</value></prop></item>
+      loop: "{{ gui_users }}"

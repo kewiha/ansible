@@ -109,3 +109,17 @@ gnome3_packages_unwanted:
   - thunderbird
   - xiterm+thai
   - xterm
+
+gnome3_tmpfs_user_block:
+  dotcache:
+    path: .cache
+    size: 1G
+  dotlocal_share_gedit:
+    path: .local/share/gedit
+    size: 100M
+  dotlocal_share_gvfsmetadata:
+    path: .local/share/gvfs-metadata
+    size: 100M
+  dotlocal_share_tracker_data:
+    path: .local/share/tracker/data
+    size: 100M

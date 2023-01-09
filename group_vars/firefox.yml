@@ -96,4 +96,12 @@ firefox_packages_unwanted:
   - firefox-esr-l10n-zh-cn
   - firefox-esr-l10n-zh-tw
 
+#firefox_tmpfs_user_block:
+#  dotcache:
+#    path: .cache
+#    size: 1G
+#  dotlocal_share_gedit:
+#    path: .local/share/gedit
+#    size: 100M
+
 floccus_export_path: "SECRET/floccus.export.json"

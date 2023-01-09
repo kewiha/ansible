@@ -17,20 +17,18 @@ ssh_pubkeys:
 ssh_key_keith_priv_path: "SECRET/id_ed25519_keith"
 ssh_key_ansible_priv_path: "SECRET/id_ed25519_ansible"
 
+
+
 admin_users: 
+  - keith
+  - ansible
+
+cli_users:
   - keith
   - ansible
 
 gui_users:
   - keith
-
-tmpfs_user_block:
-  dotcache:
-    path: .cache
-    size: 1G
-  dotlocal_share_gedit:
-    path: .local/share/gedit
-    size: 100M
 
 sshd_host_key_paths:
   - /etc/ssh/ssh_host_ecdsa_key

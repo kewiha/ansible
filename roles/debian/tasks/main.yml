@@ -1,10 +1,30 @@
 ### Common with setup-ansible_linux.yml ###
 - name: configure ssh-user group, pubkeys, PATH for {{ item }}
+  tags: debian
   include_tasks: common-setup-run-linux.yml
   loop: "{{ admin_users }}"
 
+### configure root bash ###
+- name: configure bash
+  tags: debian
+  block:
+    - name: configure root .bashrc
+      blockinfile:
+        path: "/root/.bashrc"
+        state: present
+        insertafter: EOF
+        block: |
+          if [ ! -z "$(id -nG "$USER" | grep "sudo")" ] ; then
+            PATH="$PATH:/usr/local/sbin:/usr/sbin:/sbin"
+          fi
+          unset HISTFILE
+    - name: delete bash history
+      file:
+        path: "/root/.bash_history"
+        state: absent
+
 ### network ###
-- tags: network
+- tags: debian,network
   block:
   - name: "configure /etc/hosts: line 1"
     lineinfile:
@@ -34,7 +54,7 @@
 
 
 ### apt and packages ###
-- tags: apt
+- tags: debian,apt
   block:
   - name: remove debian backports repos from apt
     replace:
@@ -77,7 +97,7 @@
     when: ansible_distribution == "Debian"
 
 - name: install debian common packages
-  tags: apt
+  tags: debian,apt
   apt:
     name: "{{ debian_packages_common }}"
     state: latest
@@ -85,7 +105,7 @@
     cache_valid_time: 3600
 
 - name: install debian intel CPU specific packages
-  tags: apt
+  tags: debian,apt
   apt:
     name: "{{ debian_packages_cpu_intel }}"
     state: latest
@@ -94,7 +114,7 @@
   when: ansible_processor[1] == "GenuineIntel"
     # ansible_processor[1] could be an unreliable way to get this. May have to use shell: to cat /proc/cpuinfo changed_when: false, and register: to get reliable CPU vendor
 - name: install debian AMD CPU specific packages
-  tags: apt
+  tags: debian,apt
   apt:
     name: "{{ debian_packages_cpu_amd }}"
     state: latest
@@ -104,7 +124,7 @@
   # ansible_processor[1] could be an unreliable way to get this. May have to use shell: to cat /proc/cpuinfo changed_when: false, and register: to get reliable CPU vendor
 
 - name: configure unattended-upgrades
-  tags: apt
+  tags: debian,apt
   block:
     - name: enable unattended-upgrades
       lineinfile:
@@ -129,14 +149,14 @@
 
 ### Localization and Input ###
 - name: disable annoying bell
-  tags: input
+  tags: debian,input
   lineinfile:
     path: /etc/inputrc
     regexp: '.*set bell-style.*'
     line: "set bell-style none"
 
 - name: set keyboard layout (requires reboot)
-  tags: input,locale
+  tags: debian,input,locale
   block:
     - name: set XKBMODEL
       lineinfile:
@@ -175,7 +195,7 @@
         create: true
 
 - name: generate locale
-  tags: locale
+  tags: debian,locale
   block:
     - name: Remove comments from locale.gen
       replace:
@@ -234,14 +254,14 @@
       notify: locale_gen
 
 - name: check timezone, RTC, and NTP are ok
-  tags: locale,time
+  tags: debian,locale,time
   shell: 
     cmd: |
       timedatectl
   register: timedatectl_out
   changed_when: false 
 - name: set timezone, RTC, NTP
-  tags: locale,time
+  tags: debian,locale,time
   block: 
     - name: set NTP server
       shell:
@@ -261,21 +281,21 @@
 
 ### security ###
 - name: check for root account, disable if found
-  tags: security
+  tags: debian,security
   shell:
     cmd: |
       [ "$(cat /etc/shadow | grep '^root:' | grep -c '^root:!:' )" == "1" ]; echo $?
   register: root_enabled
   changed_when: false
 - name: disable root account
-  tags: security
+  tags: debian,security
   shell:
     cmd: |
       [ "$(passwd -ldq root && cat /etc/shadow | grep '^root:' | grep -c '^root:!:' )" == "1" ]; echo $?
   when: root_enabled.stdout == "1"
 
 - name: configure fail2ban
-  tags: security
+  tags: debian,security
   block:
     - name: configure jail.local
       block:
@@ -332,7 +352,7 @@
           notify: restart_fail2ban
 
 - name: configure sshd
-  tags: security
+  tags: debian,security
   block:
     - name: add admin users to ssh-user group
       block:
@@ -384,3 +404,24 @@
             state: reloaded
             daemon_reload: true
           when: sshd_config_changed.changed
+
+
+### nano ###
+- name: configure nano history
+  tags: debian,nano
+  block:
+    - name: disable nano history
+      lineinfile: 
+        path: /etc/nanorc
+        regexp: '^.*set\ historylog'
+        line: |
+          unset historylog
+    - name: remove cli users nano search history
+      file:
+        state: absent
+        path: /home/{{ item }}/.local/share/nano/search_history
+      loop: "{{ cli_users }}"
+    - name: remove root nano search history
+      file:
+        state: absent
+        path: /root/.local/share/nano/search_history

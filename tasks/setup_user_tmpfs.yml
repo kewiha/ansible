@@ -1,8 +1,8 @@
 ---
-- name: sets up tmpfs for each user
+- name: sets up tmpfs mounts for a user
   tags: gnome3
   block:
-    - name: define .cache folder
+    - name: define tmpfs folder
       set_fact:
         tmpfs_dir: "/home/{{ item[1] }}/{{ item[0]['value']['path'] }}"
     - name: check if .cache is mounted
@@ -11,13 +11,13 @@
           cat /proc/mounts | grep "{{ tmpfs_dir }}" | awk '{print $2}'
       register: proc_mounts
       changed_when: false
-    - name: delete .cache if not mounted
+    - name: delete tmpfs folder contents if not mounted
       file:
         path: "{{ tmpfs_dir }}"
         state: absent
       when: not tmpfs_dir in proc_mounts.stdout_lines
       notify: remount_filesystems
-    - name: recreate .cache if not mounted
+    - name: recreate tmpfs folder if not mounted
       file:
         path: "{{ tmpfs_dir }}"
         state: directory
@@ -26,7 +26,7 @@
         mode: 0755
       when: not tmpfs_dir in proc_mounts.stdout_lines
       notify: remount_filesystems
-    - name: tmpfs .cache
+    - name: add tmpfs mount to fstab
       lineinfile:
         path: /etc/fstab
         regexp: |
