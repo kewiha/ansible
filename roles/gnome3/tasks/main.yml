@@ -4,6 +4,12 @@
   include_tasks: setup_user_tmpfs.yml
   loop: "{{ gnome3_tmpfs_user_block | dict2items | product(gui_users) | list }}"
 
+### disable trash ###
+- name: disable trash
+  tags: gnome3
+  include_tasks: disable_user_trash.yml
+  loop: "{{ gui_users }}"
+
 ### gnome3 settings ###
 - name: configure dconf keys
   tags: gnome3

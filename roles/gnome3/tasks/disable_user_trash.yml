@@ -1,0 +1,23 @@
+---
+
+- name: disable trash for {{ item }}
+  tags: gnome3
+  block:
+    - name: stat trash for {{ item }}
+      stat:
+        path: /home/{{ item }}/.local/share/Trash
+      register: trash_stat
+    - name: delete trash if directory for {{ item }}
+      file:
+        state: absent
+        path: /home/{{ item }}/.local/share/Trash
+      when: trash_stat.stat.exists and trash_stat.stat.isdir
+    - name: create empty dummy file to disable trash for {{ item }}
+      copy:
+        content: ""
+        dest: /home/{{ item }}/.local/share/Trash
+        force: no
+        group: "{{ item }}"
+        owner: "{{ item }}"
+        mode: 0700
+        attributes: i
