@@ -1,0 +1,16 @@
+---
+
+- name: get current permissions.sqlite cookie info from {{ item }}
+  tags: firefox
+  block:
+    - name: get master sql script rows for {{ item }}
+      copy:
+        src: SECRET/roles/firefox/files/permissions.sqlite.d/permissions.sqlite.insert.cookies.master.withappend.sql
+        dest: /home/{{ item }}/.mozilla/firefox/ansible/permissions.sqlite.insert.cookies.master.withappend.sql
+        mode: 0700
+    - name: run sql script for {{ item }}
+      shell:
+        cmd: |
+          sqlite3 /home/{{ item }}/.mozilla/firefox/ansible/permissions.sqlite '.read /home/{{ item }}/.mozilla/firefox/ansible/permissions.sqlite.insert.cookies.master.withappend.sql'
+      changed_when: false
+        

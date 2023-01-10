@@ -104,4 +104,4 @@ firefox_packages_unwanted:
 #    path: .local/share/gedit
 #    size: 100M
 
-floccus_export_path: "SECRET/floccus.export.json"
+floccus_export_path: "SECRET/roles/firefox/files/floccus.export.json"

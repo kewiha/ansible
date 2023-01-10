@@ -1,0 +1,24 @@
+---
+
+- name: get current permissions.sqlite cookie info from {{ item }}
+  tags: firefox
+  block:
+    - name: check permissions.sqlite exists for {{ item }}
+      stat:
+        path: /home/{{ item }}/.mozilla/firefox/ansible/permissions.sqlite
+      register: permissions_sqlite_stat
+    - name: fail if permissions.sqlite doesn't exist for {{ item }}
+      fail:
+        msg: "/home/{{ item }}/.mozilla/firefox/ansible/permissions.sqlite does not exist"
+      when: not permissions_sqlite_stat.stat.exists
+    - name: dump cookie rows from permissions.sqlite for {{ item }}
+      shell:
+        cmd: |
+          sqlite3 /home/{{ item }}/.mozilla/firefox/ansible/permissions.sqlite '.mode insert moz_perms' '.once /home/{{ item }}/.mozilla/firefox/ansible/permissions.sqlite.insert.cookies.sql' 'select * from moz_perms where type="cookie"'
+      changed_when: false
+    - name: get cookie rows for {{ item }}
+      fetch:
+        src: /home/{{ item }}/.mozilla/firefox/ansible/permissions.sqlite.insert.cookies.sql
+        dest: SECRET/roles/firefox/files/permissions.sqlite.d/permissions.sqlite.insert.cookies_{{ ansible_hostname }}_{{item}}.sql
+        flat: true
+      changed_when: false        

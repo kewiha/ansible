@@ -1,0 +1,19 @@
+---
+
+- name: create permissions.sqlite master
+  tags: firefox
+  become: false
+  run_once: true
+  block:
+    - name: make permissions.sqlite_merge_master.sh executable
+      local_action:
+        module: file
+        path: roles/firefox/scripts/permissions.sqlite_merge_master.sh
+        mode: u+x
+        state: file
+    - name: make master DB SQL script
+      local_action:
+        module: shell
+        cmd: |
+          roles/firefox/scripts/permissions.sqlite_merge_master.sh
+      changed_when: false
