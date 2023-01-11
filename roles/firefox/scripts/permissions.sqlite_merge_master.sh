@@ -1,7 +1,13 @@
 #!/bin/bash -e
 #to be run by Ansible controller, NOT a remote host
+
 scriptname="permissions.sqlite_merge_master.sh"
-sqlite_dir="SECRET/roles/firefox/files/permissions.sqlite.d"
+
+if [[ "$1" == "" ]] ; then
+	printf '%s\n' "$scriptname: ERROR: first arg not given"
+fi
+
+sqlite_dir="SECRET/roles/firefox/files/permissions.sqlite.d/$1"
 script_dir="roles/firefox/scripts"
 master_name="permissions.sqlite.insert.cookies.master.sql"
 master_name_withappend="permissions.sqlite.insert.cookies.master.withappend.sql"

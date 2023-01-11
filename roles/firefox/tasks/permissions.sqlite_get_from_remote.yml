@@ -19,6 +19,6 @@
     - name: get cookie rows for {{ item }}
       fetch:
         src: /home/{{ item }}/.mozilla/firefox/ansible/permissions.sqlite.insert.cookies.sql
-        dest: SECRET/roles/firefox/files/permissions.sqlite.d/permissions.sqlite.insert.cookies_{{ ansible_hostname }}_{{item}}.sql
+        dest: SECRET/roles/firefox/files/permissions.sqlite.d/{{item}}/permissions.sqlite.insert.cookies_{{ ansible_hostname }}.sql
         flat: true
       changed_when: false        

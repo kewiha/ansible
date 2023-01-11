@@ -15,5 +15,6 @@
       local_action:
         module: shell
         cmd: |
-          roles/firefox/scripts/permissions.sqlite_merge_master.sh
+          roles/firefox/scripts/permissions.sqlite_merge_master.sh {{ item }}
       changed_when: false
+      loop: "{{ gui_users }}"
